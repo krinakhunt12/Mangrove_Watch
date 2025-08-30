@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import { motion, useAnimation } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import Toast from "../components/Toast";
 
 // Floating elements background component
 const FloatingBackgroundElements = () => {
@@ -314,12 +315,21 @@ export default function Report() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [mounted, setMounted] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null); // Add this line
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast({ show: false, message: "", type: "success" });
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -338,12 +348,12 @@ export default function Report() {
 
     setUploadError("");
     setSelectedImage(URL.createObjectURL(file));
-    setSelectedFile(file); // Save the file object
+    setSelectedFile(file);
   };
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
-    setSelectedFile(null); // Clear the file object
+    setSelectedFile(null);
     setUploadError("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -375,7 +385,56 @@ export default function Report() {
       const result = await response.json();
 
       if (result.status === "success") {
-        alert("Report submitted successfully!\nResult: " + JSON.stringify(result.result));
+        // Check for satellite vegetation change and suspicious activity
+        const satelliteData = result.result?.satellite_vegetation_change;
+        const confidence = result.result?.confidence;
+        const label = result.result?.label;
+        
+        let validationMessage = "";
+        let pointsEarned = 0;
+        
+        // Check if AI detected something from our labels list
+        if (label && label.includes("mangrove")) {
+          // AI detected mangrove issue
+          if (satelliteData !== null && satelliteData !== undefined) {
+            // Both AI and satellite data available
+            if (satelliteData > 5) { // Significant vegetation change threshold
+              pointsEarned = 20; // Points only when both AI and satellite confirm
+              validationMessage = `🎯 Excellent! Both AI analysis and satellite data confirm significant vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. You were right! +${pointsEarned} points earned.`;
+            } else if (satelliteData > 0 && satelliteData <= 5) {
+              pointsEarned = 15; // Moderate change confirmed by both
+              validationMessage = `📊 Both AI and satellite analysis show moderate vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. Valid report! +${pointsEarned} points earned.`;
+            } else if (satelliteData < 0) {
+              pointsEarned = 15; // Vegetation loss confirmed by both
+              validationMessage = `📉 Both AI and satellite analysis show ${Math.abs(satelliteData.toFixed(1))}% vegetation loss in the last 30 days. Valid report! +${pointsEarned} points earned.`;
+            } else {
+              // AI detected but satellite shows no significant change
+              pointsEarned = 10; // Points for AI detection only
+              validationMessage = `✅ AI detected mangrove issue (${label}), but satellite analysis shows no significant vegetation change in the last 30 days. +${pointsEarned} points earned.`;
+            }
+          } else {
+            // AI detected but no satellite data available
+            pointsEarned = 10; // Points for AI detection only
+            validationMessage = `✅ AI detected mangrove issue (${label}). Satellite data unavailable for this location. Our team will investigate further. +${pointsEarned} points earned.`;
+          }
+        } else {
+          // AI did not detect mangrove issue from our labels
+          pointsEarned = 0; // No points for non-mangrove issues
+          if (satelliteData !== null && satelliteData !== undefined) {
+            validationMessage = `📝 Report submitted. Satellite analysis shows ${satelliteData.toFixed(1)}% vegetation change in the last 30 days, but AI did not detect a mangrove-related issue.`;
+          } else {
+            validationMessage = `📝 Report submitted successfully! Our team will review your submission.`;
+          }
+        }
+        
+        // Add confidence level if available
+        if (confidence && confidence > 0.3) {
+          validationMessage += ` (AI Confidence: ${Math.round(confidence * 100)}%)`;
+        }
+        
+        showToast(validationMessage, "success");
+        
+        // Reset form
         setSelectedImage(null);
         setSelectedFile(null);
         setDescription("");
@@ -383,10 +442,10 @@ export default function Report() {
           fileInputRef.current.value = "";
         }
       } else {
-        setUploadError(result.message || "There was an error submitting your report.");
+        showToast(result.message || "There was an error submitting your report.", "error");
       }
     } catch (error) {
-      setUploadError("There was an error submitting your report. Please try again.");
+      showToast("There was an error submitting your report. Please try again.", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -518,6 +577,14 @@ export default function Report() {
           </motion.p>
         </div>
       </footer>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={hideToast}
+      />
     </div>
   );
 }

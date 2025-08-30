@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Mail, Lock } from "lucide-react";
 import { setAuth } from "../utils/auth";
+import Toast from "../components/Toast";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -11,6 +12,15 @@ export default function Login() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast({ show: false, message: "", type: "success" });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,8 +44,10 @@ export default function Login() {
         window.dispatchEvent(new Event('storage'));
         // Also dispatch custom event for immediate update
         window.dispatchEvent(new Event('authStateChanged'));
-        alert("Logged in successfully!");
-        navigate("/");
+        showToast("Login successful! Welcome back!");
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
       } else {
         setError(result.message || "Login failed.");
       }
@@ -114,12 +126,20 @@ export default function Login() {
 
         {/* Sign Up Link */}
         <p className="mt-6 text-center text-green-700">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <Link to="/signup" className="font-semibold text-green-900 hover:underline">
             Sign Up
           </Link>
         </p>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={hideToast}
+      />
     </div>
   );
 }

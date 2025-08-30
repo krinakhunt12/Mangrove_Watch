@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { User, Mail, Lock } from "lucide-react";
 import { setAuth } from "../utils/auth";
+import Toast from "../components/Toast";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -12,6 +13,15 @@ export default function Register() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+
+  const hideToast = () => {
+    setToast({ show: false, message: "", type: "success" });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,8 +45,10 @@ export default function Register() {
         window.dispatchEvent(new Event('storage'));
         // Also dispatch custom event for immediate update
         window.dispatchEvent(new Event('authStateChanged'));
-        alert("Account created successfully!");
-        navigate("/");
+        showToast("Account created successfully! Welcome to Mangrove Watch!");
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
       } else {
         setError(result.message || "Signup failed.");
       }
@@ -126,6 +138,14 @@ export default function Register() {
           </Link>
         </p>
       </div>
+
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={hideToast}
+      />
     </div>
   );
 }
