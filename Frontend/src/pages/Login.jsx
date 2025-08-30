@@ -3,19 +3,46 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Mail, Lock } from "lucide-react";
+import { setAuth } from "../utils/auth";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (email && password) {
-      alert("Logged in successfully!");
-      navigate("/");
-    } else {
-      alert("Please enter email and password.");
+    setError("");
+    if (!username || !password) {
+      setError("Please enter username and password.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const result = await response.json();
+      if (result.status === "success") {
+        // Store authentication data
+        setAuth({ username: result.username, email: result.email });
+        // Trigger storage event for navbar update
+        window.dispatchEvent(new Event('storage'));
+        // Also dispatch custom event for immediate update
+        window.dispatchEvent(new Event('authStateChanged'));
+        alert("Logged in successfully!");
+        navigate("/");
+      } else {
+        setError(result.message || "Login failed.");
+      }
+    } catch (err) {
+      setError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,14 +68,14 @@ export default function Login() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {/* Email Input */}
+          {/* Username Input */}
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600" size={20} />
             <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full pl-10 pr-4 py-3 rounded-xl border border-green-300 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
             />
           </div>
@@ -72,12 +99,16 @@ export default function Login() {
             </Link>
           </div>
 
+          {/* Error Message */}
+          {error && <div className="text-red-600 text-center text-sm">{error}</div>}
+
           {/* Submit Button */}
           <Button
             type="submit"
             className="bg-green-600 hover:bg-green-700 text-white rounded-2xl py-3 shadow-md transition-all hover:scale-105"
+            disabled={loading}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </Button>
         </form>
 

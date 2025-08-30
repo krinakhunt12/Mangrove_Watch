@@ -2,66 +2,18 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import LocationBot from "../components/LocationBot"; // <-- Import the bot
 
 export default function Landing() {
   const [currentImage, setCurrentImage] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [showBot, setShowBot] = useState(false); // <-- Add state for bot
 
   // Use a single Unsplash image for hero section
   const heroImage = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80";
 
-  // Responsive menu toggle handler
-  const handleMenuToggle = () => setMenuOpen((open) => !open);
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-blue-50">
-      {/* Mobile Navbar Toggle */}
-      <div className="md:hidden flex justify-between items-center px-4 py-4 bg-green-900 text-white shadow-md">
-        <div className="flex items-center space-x-2">
-          <span className="text-2xl">🌿</span>
-          <h1 className="text-xl font-bold">Mangrove Watch</h1>
-        </div>
-        <button
-          className="focus:outline-none"
-          aria-label="Open menu"
-          onClick={handleMenuToggle}
-        >
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-      {/* Desktop Navbar */}
-      <div className="hidden md:block">
-        <Navbar />
-      </div>
-      {/* Mobile Menu Drawer */}
-      {menuOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex justify-end">
-          <div className="w-64 bg-white h-full shadow-lg p-6 flex flex-col">
-            <button
-              className="self-end mb-6 text-green-900"
-              aria-label="Close menu"
-              onClick={handleMenuToggle}
-            >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <nav className="flex flex-col space-y-4">
-              <Link to="/features" className="text-green-900 font-semibold" onClick={handleMenuToggle}>Features</Link>
-              <Link to="/how-it-works" className="text-green-900 font-semibold" onClick={handleMenuToggle}>How It Works</Link>
-              <Link to="/impact" className="text-green-900 font-semibold" onClick={handleMenuToggle}>Impact</Link>
-              <Link to="/about" className="text-green-900 font-semibold" onClick={handleMenuToggle}>About</Link>
-              <Link to="/report" className="text-green-900 font-semibold" onClick={handleMenuToggle}>Report</Link>
-              <Link to="/login" className="text-green-900 font-semibold" onClick={handleMenuToggle}>Login</Link>
-              <Link to="/login" className="text-green-900 font-semibold" onClick={handleMenuToggle}>Sign Up</Link>
-            </nav>
-          </div>
-        </div>
-      )}
+      {/* Common Navbar */}
+      <Navbar />
+      
       {/* Main Content */}
       <main className="flex-grow flex flex-col items-center justify-center px-4 py-8 md:py-12">
         {/* Hero Section */}
@@ -223,58 +175,6 @@ export default function Landing() {
           <p>© {new Date().getFullYear()} Mangrove Watch. All rights reserved.</p>
         </div>
       </footer>
-
-      {/* Bot Icon (bottom right) */}
-      <button
-        style={{
-          position: "fixed",
-          bottom: 32,
-          right: 32,
-          zIndex: 10000,
-          background: "#2e7d32",
-          borderRadius: "50%",
-          width: 56,
-          height: 56,
-          boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          border: "none",
-          cursor: "pointer",
-        }}
-        aria-label="Open Location Bot"
-        onClick={() => setShowBot(true)}
-      >
-        <span style={{ fontSize: "2rem", color: "#fff" }}>🤖</span>
-      </button>
-
-      {/* LocationBot Popup */}
-      {showBot && (
-        <div style={{
-          position: "fixed",
-          bottom: 24,
-          right: 24,
-          zIndex: 10001,
-        }}>
-          <LocationBot />
-          <button
-            style={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              background: "transparent",
-              border: "none",
-              fontSize: "1.5rem",
-              color: "#2e7d32",
-              cursor: "pointer",
-            }}
-            aria-label="Close Location Bot"
-            onClick={() => setShowBot(false)}
-          >
-            ×
-          </button>
-        </div>
-      )}
     </div>
   );
 }

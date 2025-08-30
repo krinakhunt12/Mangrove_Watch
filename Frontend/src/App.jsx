@@ -6,12 +6,15 @@ import Home from './pages/Home.jsx'
 import "./index.css";
 import Landing from './pages/Landing.jsx'
 import AppRoutes from './routes.jsx'
+import GlobalBot from './components/GlobalBot.jsx'
+
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <>
-<AppRoutes/>
+      <AppRoutes/>
+      <GlobalBot />
     </>
   )
 }

@@ -1,22 +1,49 @@
-// src/pages/login.jsx
+// src/pages/Signup.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { User, Mail, Lock } from "lucide-react";
+import { setAuth } from "../utils/auth";
 
 export default function Register() {
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (name && email && password) {
-      alert("Account created successfully!");
-      navigate("/login");
-    } else {
-      alert("Please fill all fields.");
+    setError("");
+    if (!username || !email || !password) {
+      setError("Please fill all fields.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:5000/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password })
+      });
+      const result = await response.json();
+      if (result.status === "success") {
+        // Store authentication data
+        setAuth({ username: result.username, email: result.email });
+        // Trigger storage event for navbar update
+        window.dispatchEvent(new Event('storage'));
+        // Also dispatch custom event for immediate update
+        window.dispatchEvent(new Event('authStateChanged'));
+        alert("Account created successfully!");
+        navigate("/");
+      } else {
+        setError(result.message || "Signup failed.");
+      }
+    } catch (err) {
+      setError("Server error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -42,14 +69,14 @@ export default function Register() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {/* Full Name */}
+          {/* Username */}
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600" size={20} />
             <input
               type="text"
-              placeholder="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full pl-10 pr-4 py-3 rounded-xl border border-green-300 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
             />
           </div>
@@ -78,12 +105,16 @@ export default function Register() {
             />
           </div>
 
+          {/* Error Message */}
+          {error && <div className="text-red-600 text-center text-sm">{error}</div>}
+
           {/* Submit Button */}
           <Button
             type="submit"
             className="bg-green-600 hover:bg-green-700 text-white rounded-2xl py-3 shadow-md transition-all hover:scale-105"
+            disabled={loading}
           >
-            Sign Up
+            {loading ? "Signing up..." : "Sign Up"}
           </Button>
         </form>
 
