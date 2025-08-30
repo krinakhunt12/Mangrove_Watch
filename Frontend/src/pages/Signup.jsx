@@ -1,8 +1,8 @@
-// src/pages/Register.jsx
+// src/pages/login.jsx
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
 import { Button } from "../components/ui/button";
+import { User, Mail, Lock } from "lucide-react";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -12,59 +12,88 @@ export default function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Replace with real registration logic
     if (name && email && password) {
       alert("Account created successfully!");
-      navigate("/login"); // Redirect to login after sign up
+      navigate("/login");
     } else {
       alert("Please fill all fields.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-green-50 flex flex-col">
-      <Navbar />
-      <div className="flex-grow flex items-center justify-center">
-        <div className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md border border-green-200">
-          <h2 className="text-3xl font-bold text-green-900 text-center mb-6">
-            Sign Up
-          </h2>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 via-blue-100 to-green-200 relative overflow-hidden">
+      {/* Background Image */}
+      <img
+        src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1600&q=80"
+        alt="Mangrove"
+        className="absolute inset-0 w-full h-full object-cover opacity-30"
+      />
+
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-green-50/70 via-white/60 to-blue-100/70 backdrop-blur-sm"></div>
+
+      {/* Card */}
+      <div className="relative z-10 w-full max-w-md mx-auto bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-green-200 animate-fadeIn">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-extrabold text-green-900">Create Account</h1>
+          <p className="text-green-700 mt-2">Join us and start your journey</p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {/* Full Name */}
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600" size={20} />
             <input
               type="text"
               placeholder="Full Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="border border-green-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-green-300 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
             />
+          </div>
+
+          {/* Email */}
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600" size={20} />
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border border-green-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-green-300 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
             />
+          </div>
+
+          {/* Password */}
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600" size={20} />
             <input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border border-green-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-green-300 bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
             />
-            <Button
-              type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white rounded-2xl py-3 shadow-md transition-all hover:scale-105"
-            >
-              Sign Up
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-green-700">
-            Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-green-900 hover:underline">
-              Login
-            </Link>
-          </p>
-        </div>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700 text-white rounded-2xl py-3 shadow-md transition-all hover:scale-105"
+          >
+            Sign Up
+          </Button>
+        </form>
+
+        {/* Link to Login */}
+        <p className="mt-6 text-center text-green-700">
+          Already have an account?{" "}
+          <Link to="/login" className="font-semibold text-green-900 hover:underline">
+            Login
+          </Link>
+        </p>
       </div>
     </div>
   );

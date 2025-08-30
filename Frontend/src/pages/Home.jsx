@@ -50,14 +50,15 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-100 p-4 md:p-6">
-      <div className="grid gap-6">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 bg-white rounded-2xl shadow-lg">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-emerald-100 p-2 md:p-6">
+      {/* Header */}
+      <div className="max-w-6xl mx-auto mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-6 bg-white rounded-3xl shadow-2xl border border-green-200">
           <div className="flex items-center gap-3">
-            <div className="bg-green-600 p-3 rounded-full">
+            <div className="bg-green-600 p-3 rounded-full shadow">
               <span className="text-2xl text-white">🌿</span>
             </div>
-            <h2 className="text-xl md:text-2xl font-bold text-green-900">Welcome, {user.name}</h2>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-green-900">Welcome, {user.name}</h2>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-2">
             <span className="text-green-700 font-semibold">Points: {user.points}</span>
@@ -65,31 +66,33 @@ export default function Home() {
             <span className="text-green-700 font-semibold">Level: {user.level}</span>
           </div>
         </div>
+      </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-2xl shadow-md text-center">
-            <div className="text-2xl font-bold text-green-700">{reports.length}</div>
-            <div className="text-sm text-green-600">Active Reports</div>
-          </div>
-          <div className="bg-white p-4 rounded-2xl shadow-md text-center">
-            <div className="text-2xl font-bold text-green-700">{leaderboard.length}</div>
-            <div className="text-sm text-green-600">Active Guardians</div>
-          </div>
-          <div className="bg-white p-4 rounded-2xl shadow-md text-center">
-            <div className="text-2xl font-bold text-green-700">16</div>
-            <div className="text-sm text-green-600">Resolved Issues</div>
-          </div>
-          <div className="bg-white p-4 rounded-2xl shadow-md text-center">
-            <div className="text-2xl font-bold text-green-700">92%</div>
-            <div className="text-sm text-green-600">Community Score</div>
-          </div>
+      {/* Stats Overview */}
+      <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-2xl shadow-md text-center border border-green-100">
+          <div className="text-2xl font-bold text-green-700">{reports.length}</div>
+          <div className="text-sm text-green-600">Active Reports</div>
         </div>
+        <div className="bg-white p-4 rounded-2xl shadow-md text-center border border-green-100">
+          <div className="text-2xl font-bold text-green-700">{leaderboard.length}</div>
+          <div className="text-sm text-green-600">Active Guardians</div>
+        </div>
+        <div className="bg-white p-4 rounded-2xl shadow-md text-center border border-green-100">
+          <div className="text-2xl font-bold text-green-700">16</div>
+          <div className="text-sm text-green-600">Resolved Issues</div>
+        </div>
+        <div className="bg-white p-4 rounded-2xl shadow-md text-center border border-green-100">
+          <div className="text-2xl font-bold text-green-700">92%</div>
+          <div className="text-sm text-green-600">Community Score</div>
+        </div>
+      </div>
 
+      <div className="max-w-6xl mx-auto grid gap-6">
         {/* Map Section */}
-        <Card className="shadow-lg rounded-2xl overflow-hidden border-0">
+        <Card className="shadow-lg rounded-3xl overflow-hidden border-0">
           <CardHeader className="bg-green-700 text-white py-4">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
               <span>🗺️</span> Live Incidents Map
             </CardTitle>
           </CardHeader>
@@ -126,9 +129,9 @@ export default function Home() {
         {/* User Stats + Leaderboard */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* User Stats */}
-          <Card className="shadow-lg rounded-2xl border-0 overflow-hidden">
+          <Card className="shadow-lg rounded-3xl border-0 overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                 <span>{user.avatar}</span> Your Guardian Profile
               </CardTitle>
             </CardHeader>
@@ -166,9 +169,9 @@ export default function Home() {
           </Card>
 
           {/* Leaderboard Preview */}
-          <Card className="shadow-lg rounded-2xl border-0 overflow-hidden">
+          <Card className="shadow-lg rounded-3xl border-0 overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-amber-600 to-amber-700 text-white py-4">
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                 <span>🏆</span> Guardian Leaderboard
               </CardTitle>
             </CardHeader>
@@ -209,9 +212,9 @@ export default function Home() {
         </div>
 
         {/* Recent Activity */}
-        <Card className="shadow-lg rounded-2xl border-0 overflow-hidden">
+        <Card className="shadow-lg rounded-3xl border-0 overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
               <span>📋</span> Recent Activity
             </CardTitle>
           </CardHeader>
