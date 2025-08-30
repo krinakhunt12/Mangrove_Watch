@@ -10,10 +10,10 @@ from full_pipe import Pipeline   # <-- use pipeline instead of direct satellite 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --------------------------
+# --------------------------    
 # Load BOT TOKEN
 # --------------------------
-BOT_TOKEN = "8453666313:AAEzpPpLHifihOksnuHW8HD3KZlF2nheYW8"  # <---- replace with your token!
+BOT_TOKEN = "8451436867:AAGqnbOk3rjUbIAJWHF64YpHrUUMgcYyqHU"  # <---- replace with your token!
 
 # Initialize pipeline
 pipeline = Pipeline()

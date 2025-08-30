@@ -2,9 +2,12 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+import LocationBot from "../components/LocationBot"; // <-- Import the bot
+
 export default function Landing() {
   const [currentImage, setCurrentImage] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showBot, setShowBot] = useState(false); // <-- Add state for bot
 
   // Use a single Unsplash image for hero section
   const heroImage = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80";
@@ -220,6 +223,58 @@ export default function Landing() {
           <p>© {new Date().getFullYear()} Mangrove Watch. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Bot Icon (bottom right) */}
+      <button
+        style={{
+          position: "fixed",
+          bottom: 32,
+          right: 32,
+          zIndex: 10000,
+          background: "#2e7d32",
+          borderRadius: "50%",
+          width: 56,
+          height: 56,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "none",
+          cursor: "pointer",
+        }}
+        aria-label="Open Location Bot"
+        onClick={() => setShowBot(true)}
+      >
+        <span style={{ fontSize: "2rem", color: "#fff" }}>🤖</span>
+      </button>
+
+      {/* LocationBot Popup */}
+      {showBot && (
+        <div style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          zIndex: 10001,
+        }}>
+          <LocationBot />
+          <button
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              background: "transparent",
+              border: "none",
+              fontSize: "1.5rem",
+              color: "#2e7d32",
+              cursor: "pointer",
+            }}
+            aria-label="Close Location Bot"
+            onClick={() => setShowBot(false)}
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

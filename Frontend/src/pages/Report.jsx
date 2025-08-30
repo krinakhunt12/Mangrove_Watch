@@ -367,7 +367,7 @@ export default function Report() {
       formData.append("mode", "image");
       formData.append("description", description);
 
-      const response = await fetch("http://127.0.0.1:5000/run-pipeline", {
+      const response = await fetch("http://localhost:5000/run-pipeline", {
         method: "POST",
         body: formData,
       });

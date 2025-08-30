@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 import os
 import full_pipe  # example import, adjust as per your logic
 import ai_validator
@@ -6,12 +6,21 @@ import bot_handler
 import utils
 import satelite_check
 from werkzeug.utils import secure_filename
+from flask_cors import CORS
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
+import time
 
 app = Flask(__name__)
+
+# 2️⃣ Enable CORS after app is defined
+CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+pipeline = full_pipe.Pipeline()  # <-- Add this line
 
 # Health check
 @app.route('/', methods=['GET'])
@@ -124,6 +133,58 @@ def satellite_check():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+
+@app.route("/check_location", methods=["POST"])
+def check_location():
+    data = request.json
+    text = data.get("location", "").strip()
+    if not text:
+        return jsonify({"error": "No location provided"}), 400
+
+    lat, lon = None, None
+
+    # Case 1: Coordinates provided
+    if "," in text:
+        try:
+            parts = text.split(",")
+            lat = float(parts[0].strip())
+            lon = float(parts[1].strip())
+        except ValueError:
+            return jsonify({"error": "Invalid coordinates format. Use: lat, lon"}), 400
+
+    # Case 2: Place name provided
+    else:
+        geolocator = Nominatim(user_agent="frontend_api")
+
+        def geocode_with_retry(location_name, retries=3, delay=1):
+            """Retry geocoding in case of timeout or service unavailable"""
+            for attempt in range(retries):
+                try:
+                    loc = geolocator.geocode(location_name, timeout=10)
+                    if loc:
+                        return loc.latitude, loc.longitude
+                    else:
+                        return None, None
+                except (GeocoderTimedOut, GeocoderUnavailable):
+                    time.sleep(delay)  # wait before retry
+            return None, None
+
+        lat, lon = geocode_with_retry(text)
+        if lat is None or lon is None:
+            return jsonify({"error": "Location not found or geocoding service unavailable"}), 503
+
+    # Run your pipeline
+    try:
+        result = pipeline.run_on_coordinates(lat, lon)
+        veg_change = result.get("satellite_vegetation_change", "N/A")
+    except Exception as e:
+        return jsonify({"error": f"Pipeline error: {str(e)}"}), 500
+
+    return jsonify({
+        "latitude": lat,
+        "longitude": lon,
+        "vegetation_change": veg_change
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0", port=5000)

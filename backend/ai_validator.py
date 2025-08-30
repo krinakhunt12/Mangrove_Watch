@@ -3,9 +3,7 @@ import json
 import csv
 from datetime import datetime
 from PIL import Image
-from transformers import CLIPProcessor, CLIPModel
 from utils import get_gps_coordinates   # helper for GPS extraction
-
 
 class AIValidator:
     def __init__(self, labels_file="labels.txt", model_name="openai/clip-vit-base-patch32", results_dir="results"):
@@ -21,12 +19,23 @@ class AIValidator:
         self.results_dir = results_dir
         os.makedirs(self.results_dir, exist_ok=True)
 
-        # Load CLIP model
-        self.model = CLIPModel.from_pretrained(model_name)
-        self.processor = CLIPProcessor.from_pretrained(model_name)
+        # Model placeholders (will be loaded later)
+        self.model_name = model_name
+        self.model = None
+        self.processor = None
+
+    def load_model(self):
+        """Load the CLIP model and processor (deferred to runtime)"""
+        if self.model is None or self.processor is None:
+            from transformers import CLIPProcessor, CLIPModel
+            print(f"[INFO] Loading CLIP model: {self.model_name} ...")
+            self.model = CLIPModel.from_pretrained(self.model_name)
+            self.processor = CLIPProcessor.from_pretrained(self.model_name)
+            print("[INFO] Model loaded successfully ✅")
 
     def analyze_photo(self, image_path):
         """Run classification on a single photo"""
+        self.load_model()  # ensure model is loaded
         image = Image.open(image_path).convert("RGB")
         inputs = self.processor(text=self.labels, images=image, return_tensors="pt", padding=True)
         outputs = self.model(**inputs)
@@ -42,7 +51,8 @@ class AIValidator:
         }
 
     def analyze_folder(self, folder_path="Data"):
-        """Run classification on all images in Data/"""
+        """Run classification on all images in folder"""
+        self.load_model()  # ensure model is loaded
         results = {}
         for filename in os.listdir(folder_path):
             if filename.lower().endswith((".png", ".jpg", ".jpeg")):
@@ -78,6 +88,7 @@ class AIValidator:
 
 if __name__ == "__main__":
     validator = AIValidator()
+    validator.load_model()  # load model safely here
     results = validator.analyze_folder("Data")
     validator.save_results(results)
     print("[INFO] Processing complete ✅")
