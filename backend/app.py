@@ -5,8 +5,13 @@ import ai_validator
 import bot_handler
 import utils
 import satelite_check
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 # Health check
 @app.route('/', methods=['GET'])
@@ -18,6 +23,27 @@ def home():
 @app.route("/run-pipeline", methods=["POST"])
 def run_pipeline():
     try:
+        # Check if request is multipart/form-data (file upload)
+        if request.content_type and request.content_type.startswith("multipart/form-data"):
+            image_file = request.files.get("image")
+            mode = request.form.get("mode")
+            description = request.form.get("description", "")
+
+            if mode == "image":
+                if not image_file:
+                    return jsonify({"status": "error", "message": "image is required"})
+                filename = secure_filename(image_file.filename)
+                image_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                image_file.save(image_path)
+                # Pass image_path to pipeline
+                result = pipeline.run_on_image(image_path)
+                # Optionally, you can save description or handle it as needed
+                return jsonify({"status": "success", "result": result})
+
+            else:
+                return jsonify({"status": "error", "message": "Invalid mode for file upload. Use 'image'."})
+
+        # Otherwise, handle JSON as before
         data = request.get_json()
         mode = data.get("mode")
 

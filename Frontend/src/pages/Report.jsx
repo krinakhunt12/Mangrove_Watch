@@ -314,6 +314,7 @@ export default function Report() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null); // Add this line
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -323,24 +324,26 @@ export default function Report() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     // Validate file type and size
     if (!file.type.startsWith('image/')) {
       setUploadError("Please select an image file");
       return;
     }
-    
+
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
       setUploadError("Image size should be less than 5MB");
       return;
     }
-    
+
     setUploadError("");
     setSelectedImage(URL.createObjectURL(file));
+    setSelectedFile(file); // Save the file object
   };
 
   const handleRemoveImage = () => {
     setSelectedImage(null);
+    setSelectedFile(null); // Clear the file object
     setUploadError("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -349,25 +352,41 @@ export default function Report() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!selectedImage || !description) {
+
+    if (!selectedFile || !description) {
       setUploadError("Please upload a photo and add a description.");
       return;
     }
-    
+
     setIsSubmitting(true);
-    
-    // Simulate API call
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      alert("Report submitted successfully!");
-      setSelectedImage(null);
-      setDescription("");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+      // Prepare FormData for image upload
+      const formData = new FormData();
+      formData.append("image", selectedFile);
+      formData.append("mode", "image");
+      formData.append("description", description);
+
+      const response = await fetch("http://127.0.0.1:5000/run-pipeline", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.status === "success") {
+        alert("Report submitted successfully!\nResult: " + JSON.stringify(result.result));
+        setSelectedImage(null);
+        setSelectedFile(null);
+        setDescription("");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        setUploadError(result.message || "There was an error submitting your report.");
       }
     } catch (error) {
-      alert("There was an error submitting your report. Please try again.");
+      setUploadError("There was an error submitting your report. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -466,7 +485,7 @@ export default function Report() {
             className="fill-green-200"
           ></path>
           <path 
-            d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" 
+            d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39 116.92-43.05c59.73-5.85 113.28 22.88 168.9 38.84 30.2 8.66 59 6.17 87.09-7.5 22.43-10.89 48-26.93 60.65-49.24V0Z" 
             opacity=".5" 
             className="fill-green-200"
           ></path>
