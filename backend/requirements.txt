@@ -23,6 +23,6 @@ websockets==15.0.1
 
 
 Flask==2.3.2
-fFlask-Cors
+Flask-Cors
 requests==2.31.0
 gunicorn==20.1.0
