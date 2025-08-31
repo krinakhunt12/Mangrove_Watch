@@ -7,7 +7,7 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
         proxy: {
-            "/api": "http://localhost:5000"
+            "/api": "https://mangrove-watch.onrender.com"
         }, // <-- missing comma fixed here
         host: "0.0.0.0", // required to expose to external devices
         allowedHosts: [
