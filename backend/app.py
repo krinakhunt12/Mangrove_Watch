@@ -16,7 +16,7 @@ import sqlite3
 app = Flask(__name__)
 
 # 2️⃣ Enable CORS after app is defined
-CORS(app, origins=["ttps://mangrove-watch.vercel.app"], supports_credentials=True)
+CORS(app, origins=["ttps://mangrove-watch.vercel.app","http://localhost:5173"], supports_credentials=True)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
