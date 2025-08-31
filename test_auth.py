@@ -5,7 +5,7 @@ Test script to verify authentication flow
 import requests
 import json
 
-BASE_URL = "http://localhost:5000"
+BASE_URL = "https://44c6a7c5dc46.ngrok-free.app"
 
 def test_signup():
     """Test user signup"""
@@ -52,6 +52,6 @@ if __name__ == "__main__":
             print(f"\n❌ Login failed: {login_result.get('message')}")
             
     except requests.exceptions.ConnectionError:
-        print("❌ Could not connect to backend server. Make sure it's running on http://localhost:5000")
+        print("❌ Could not connect to backend server. Make sure it's running on https://44c6a7c5dc46.ngrok-free.app")
     except Exception as e:
         print(f"❌ Error: {e}")

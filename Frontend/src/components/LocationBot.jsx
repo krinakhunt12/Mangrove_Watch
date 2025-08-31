@@ -59,7 +59,7 @@ const LocationBot = ({ isOpen, onClose }) => {
     setResult(null);
 
     try {
-      const response = await fetch("http://localhost:5000/check_location", {
+      const response = await fetch("https://44c6a7c5dc46.ngrok-free.app/check_location", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ location: locationInput }),

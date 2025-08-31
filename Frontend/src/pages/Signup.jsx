@@ -32,7 +32,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/signup", {
+      const response = await fetch("https://44c6a7c5dc46.ngrok-free.app/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password })
