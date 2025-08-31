@@ -31,7 +31,7 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const response = await fetch("https://44c6a7c5dc46.ngrok-free.app/login", {
+      const response = await fetch("https://mangrove-watch.onrender.com/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })

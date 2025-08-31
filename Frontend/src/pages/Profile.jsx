@@ -18,7 +18,7 @@ export default function Profile() {
   const fetchUserStats = async (userId) => {
     try {
       setStatsLoading(true);
-      const response = await fetch(`https://44c6a7c5dc46.ngrok-free.app/user/stats?user_id=${userId}`);
+      const response = await fetch(`https://mangrove-watch.onrender.com/user/stats?user_id=${userId}`);
       const result = await response.json();
       
       if (result.status === "success") {
@@ -38,7 +38,7 @@ export default function Profile() {
   // Fetch user reports
   const fetchUserReports = async (userId) => {
     try {
-      const response = await fetch(`https://44c6a7c5dc46.ngrok-free.app/user/reports?user_id=${userId}`);
+      const response = await fetch(`https://mangrove-watch.onrender.com/user/reports?user_id=${userId}`);
       const result = await response.json();
       
       if (result.status === "success") {

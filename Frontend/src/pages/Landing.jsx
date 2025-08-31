@@ -17,7 +17,7 @@ const UserStatsSection = () => {
 
       setLoading(true);
       try {
-        const response = await fetch(`https://44c6a7c5dc46.ngrok-free.app/user/stats?user_id=${auth.user_id}`);
+        const response = await fetch(`https://mangrove-watch.onrender.com/user/stats?user_id=${auth.user_id}`);
         const result = await response.json();
         
         if (result.status === "success") {

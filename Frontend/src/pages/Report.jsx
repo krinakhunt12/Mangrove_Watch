@@ -747,7 +747,7 @@ export default function Report() {
         formData.append("user_id", auth.user_id);
       }
 
-      const response = await fetch("https://44c6a7c5dc46.ngrok-free.app/run-pipeline", {
+      const response = await fetch("https://mangrove-watch.onrender.com/run-pipeline", {
         method: "POST",
         body: formData,
       });
