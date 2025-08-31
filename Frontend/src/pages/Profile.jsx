@@ -3,12 +3,86 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
-import { User, Mail, Settings, Shield } from "lucide-react";
+import { User, Mail, Settings, Shield, RefreshCw } from "lucide-react";
 import { getAuth, isAuthenticated } from "../utils/auth";
 
 export default function Profile() {
   const [userData, setUserData] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // Fetch user statistics from API
+  const fetchUserStats = async (userId) => {
+    try {
+      setStatsLoading(true);
+      const response = await fetch(`http://localhost:5000/user/points?user_id=${userId}`);
+      const result = await response.json();
+      
+      if (result.status === "success") {
+        setUserStats(result.data);
+      } else {
+        console.error("Error fetching user stats:", result.message);
+        setError("Failed to load user statistics");
+      }
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      setError("Failed to load user statistics");
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // Fetch points history
+  const fetchPointsHistory = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/user/points/history?user_id=${userId}`);
+      const result = await response.json();
+      
+      if (result.status === "success") {
+        // Calculate verified reports (reports with points earned)
+        const verifiedReports = result.data.filter(item => item.points_earned > 0).length;
+        setUserStats(prev => ({
+          ...prev,
+          verified_reports: verifiedReports,
+          points_history: result.data
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching points history:", error);
+    }
+  };
+
+  // Fetch user reports
+  const fetchUserReports = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/user/reports?user_id=${userId}`);
+      const result = await response.json();
+      
+      if (result.status === "success") {
+        // Calculate additional statistics
+        const totalReports = result.data.length;
+        const verifiedReports = result.data.filter(report => report.points_earned > 0).length;
+        const totalPointsEarned = result.data.reduce((sum, report) => sum + (report.points_earned || 0), 0);
+        const avgConfidence = result.data.length > 0 
+          ? result.data.reduce((sum, report) => sum + (report.confidence || 0), 0) / result.data.length 
+          : 0;
+        
+        setUserStats(prev => ({
+          ...prev,
+          total_reports: totalReports,
+          verified_reports: verifiedReports,
+          total_points_earned: totalPointsEarned,
+          avg_confidence: avgConfidence,
+          reports: result.data
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching user reports:", error);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -18,14 +92,46 @@ export default function Profile() {
     
     const auth = getAuth();
     setUserData(auth);
+    
+    if (auth?.user_id) {
+      fetchUserStats(auth.user_id);
+      fetchPointsHistory(auth.user_id);
+      fetchUserReports(auth.user_id);
+    }
+    
+    setLoading(false);
   }, [navigate]);
 
-  if (!userData) {
+  // Listen for points updates from Report page
+  useEffect(() => {
+    const handlePointsUpdate = () => {
+      if (userData?.user_id) {
+        fetchUserStats(userData.user_id);
+        fetchPointsHistory(userData.user_id);
+        fetchUserReports(userData.user_id);
+      }
+    };
+
+    window.addEventListener('pointsUpdated', handlePointsUpdate);
+    return () => window.removeEventListener('pointsUpdated', handlePointsUpdate);
+  }, [userData]);
+
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
           <p className="mt-4 text-green-700">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">User data not found</p>
         </div>
       </div>
     );
@@ -103,21 +209,134 @@ export default function Profile() {
 
             {/* Statistics */}
             <Card className="p-6 bg-white/80 backdrop-blur-sm border-green-200">
-              <h3 className="text-lg font-semibold text-green-900 mb-4">Your Activity</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-green-900">Your Activity</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (userData?.user_id) {
+                      fetchUserStats(userData.user_id);
+                      fetchPointsHistory(userData.user_id);
+                      fetchUserReports(userData.user_id);
+                    }
+                  }}
+                  disabled={statsLoading}
+                  className="p-1 h-auto"
+                >
+                  <RefreshCw size={16} className={`text-green-600 ${statsLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+              
+              {error && (
+                <div className="text-red-500 text-sm mb-4 p-2 bg-red-50 rounded">
+                  {error}
+                </div>
+              )}
+              
               <div className="space-y-4">
                 <div className="text-center p-4 bg-green-100 rounded-lg">
-                  <div className="text-2xl font-bold text-green-900">12</div>
+                  <div className="text-2xl font-bold text-green-900">
+                    {statsLoading ? (
+                      <div className="animate-pulse">...</div>
+                    ) : (
+                      userStats?.total_reports || 0
+                    )}
+                  </div>
                   <div className="text-green-700 text-sm">Reports Submitted</div>
                 </div>
+                
                 <div className="text-center p-4 bg-blue-100 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-900">8</div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {statsLoading ? (
+                      <div className="animate-pulse">...</div>
+                    ) : (
+                      userStats?.verified_reports || 0
+                    )}
+                  </div>
                   <div className="text-blue-700 text-sm">Verified Reports</div>
                 </div>
+                
                 <div className="text-center p-4 bg-yellow-100 rounded-lg">
-                  <div className="text-2xl font-bold text-yellow-900">450</div>
+                  <div className="text-2xl font-bold text-yellow-900">
+                    {statsLoading ? (
+                      <div className="animate-pulse">...</div>
+                    ) : (
+                      userStats?.points || 0
+                    )}
+                  </div>
                   <div className="text-yellow-700 text-sm">Points Earned</div>
                 </div>
               </div>
+              
+              {/* Additional Stats */}
+              {userStats?.avg_confidence !== undefined && (
+                <div className="mt-4 pt-4 border-t border-green-200">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="text-center p-3 bg-purple-50 rounded-lg">
+                      <div className="text-lg font-bold text-purple-900">
+                        {statsLoading ? "..." : `${Math.round(userStats.avg_confidence * 100)}%`}
+                      </div>
+                      <div className="text-purple-700 text-xs">Avg Confidence</div>
+                    </div>
+                    <div className="text-center p-3 bg-orange-50 rounded-lg">
+                      <div className="text-lg font-bold text-orange-900">
+                        {statsLoading ? "..." : userStats?.reports?.length > 0 ? 
+                          `${Math.round((userStats.verified_reports / userStats.total_reports) * 100)}%` : "0%"
+                        }
+                      </div>
+                      <div className="text-orange-700 text-xs">Success Rate</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Points History Preview */}
+              {userStats?.points_history && userStats.points_history.length > 0 && (
+                <div className="mt-6 pt-4 border-t border-green-200">
+                  <h4 className="text-sm font-semibold text-green-900 mb-3">Recent Activity</h4>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {userStats.points_history.slice(0, 3).map((item, index) => (
+                      <div key={index} className="flex justify-between items-center text-xs p-2 bg-green-50 rounded">
+                        <span className="text-green-700 truncate">{item.description}</span>
+                        <span className="text-green-600 font-semibold">+{item.points_earned}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Reports Preview */}
+              {userStats?.reports && userStats.reports.length > 0 && (
+                <div className="mt-6 pt-4 border-t border-green-200">
+                  <h4 className="text-sm font-semibold text-green-900 mb-3">Recent Reports</h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {userStats.reports.slice(0, 3).map((report, index) => (
+                      <div key={index} className="text-xs p-2 bg-blue-50 rounded">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-blue-700 font-medium truncate">
+                            {report.label || 'Mangrove Issue'}
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            report.points_earned > 0 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {report.points_earned > 0 ? `+${report.points_earned}pts` : 'No points'}
+                          </span>
+                        </div>
+                        <div className="text-blue-600 text-xs">
+                          {report.confidence ? `Confidence: ${Math.round(report.confidence * 100)}%` : ''}
+                          {report.satellite_vegetation_change && report.satellite_vegetation_change !== 'null' 
+                            ? ` • Satellite: ${parseFloat(report.satellite_vegetation_change).toFixed(1)}%`
+                            : ''
+                          }
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
           </div>
         </div>

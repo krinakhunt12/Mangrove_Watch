@@ -40,7 +40,7 @@ export default function Register() {
       const result = await response.json();
       if (result.status === "success") {
         // Store authentication data
-        setAuth({ username: result.username, email: result.email });
+        setAuth({ username: result.username, email: result.email, user_id: result.user_id });
         // Trigger storage event for navbar update
         window.dispatchEvent(new Event('storage'));
         // Also dispatch custom event for immediate update

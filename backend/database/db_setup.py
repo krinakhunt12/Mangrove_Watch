@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
+    points INTEGER DEFAULT 0,
+    total_reports INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """)
@@ -38,8 +40,24 @@ CREATE TABLE IF NOT EXISTS workflow_results (
     label TEXT,
     satellite_vegetation_change TEXT,
     status TEXT,
+    points_earned INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id)
+);
+""")
+
+# Points history table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS points_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    points_earned INTEGER,
+    points_type TEXT,
+    description TEXT,
+    report_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (report_id) REFERENCES workflow_results (id)
 );
 """)
 

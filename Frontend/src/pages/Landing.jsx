@@ -1,178 +1,211 @@
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
+import { getAuth, isAuthenticated } from "../utils/auth";
 
-export default function Landing() {
-  const [currentImage, setCurrentImage] = useState(0);
+const UserPointsSection = () => {
+  const [pointsData, setPointsData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Use a single Unsplash image for hero section
-  const heroImage = "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80";
+  useEffect(() => {
+    const fetchPoints = async () => {
+      if (!isAuthenticated()) return;
+      
+      const auth = getAuth();
+      if (!auth?.user_id) return;
+
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:5000/user/points?user_id=${auth.user_id}`);
+        const result = await response.json();
+        
+        if (result.status === "success") {
+          setPointsData(result.data);
+        }
+      } catch (error) {
+        console.error("Error fetching points:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPoints();
+    
+    // Listen for auth changes
+    const handleAuthChange = () => {
+      if (isAuthenticated()) {
+        fetchPoints();
+      } else {
+        setPointsData(null);
+      }
+    };
+
+    window.addEventListener('storage', handleAuthChange);
+    window.addEventListener('authStateChanged', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('authStateChanged', handleAuthChange);
+    };
+  }, []);
+
+  if (!isAuthenticated() || !pointsData) return null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-green-50 to-blue-50">
-      {/* Common Navbar */}
-      <Navbar />
-      
-      {/* Main Content */}
-      <main className="flex-grow flex flex-col items-center justify-center px-4 py-8 md:py-12">
-        {/* Hero Section */}
-        <section className="max-w-6xl mx-auto mb-10 md:mb-16 w-full">
-          <div className="container mx-auto flex flex-col md:flex-row items-center md:items-start md:space-x-12">
-            {/* Text Section */}
-            <div className="md:w-1/2 w-full text-center md:text-left mb-8 md:mb-0">
-              <h1 className="text-3xl md:text-5xl font-bold text-green-900 mb-6 leading-tight">
-                Protect our Mangroves Together
-              </h1>
-              <p className="text-base md:text-xl text-green-800 mb-8 max-w-lg mx-auto md:mx-0">
-                Join the community-driven conservation platform to monitor, report, and protect mangrove ecosystems worldwide.
-              </p>
-              <Link to="/home">
-                <Button className="bg-green-600 hover:bg-green-700 text-white text-base md:text-lg px-6 md:px-8 py-3 rounded-2xl shadow-md transition-all hover:scale-105">
-                  Get Started
-                </Button>
-              </Link>
+    <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white py-12 mb-16">
+      <div className="container mx-auto px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-8">Your Conservation Impact</h2>
+          
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Points Card */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <div className="text-4xl font-bold mb-2 text-yellow-300">
+                {loading ? "..." : pointsData.points}
+              </div>
+              <div className="text-lg font-semibold mb-2">Conservation Points</div>
+              <div className="text-sm opacity-90">
+                Earned through verified mangrove reports
+              </div>
             </div>
-            {/* Image Section */}
-            <div className="md:w-1/2 w-full relative h-56 md:h-80 overflow-hidden rounded-2xl shadow-lg">
-              <img
-                src={heroImage}
-                alt="Mangrove ecosystem"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
-        </section>
 
-        {/* Features Section */}
-        <section id="features" className="w-full max-w-6xl mb-12 md:mb-20">
-          <h2 className="text-2xl md:text-3xl font-bold text-green-900 text-center mb-8 md:mb-12">
-            How You Can Help
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md text-center">
-              <div className="text-3xl md:text-4xl mb-2 md:mb-4">📱</div>
-              <h3 className="text-lg md:text-xl font-semibold text-green-800 mb-2 md:mb-3">
-                Report Incidents
-              </h3>
-              <p className="text-green-700 text-sm md:text-base">
-                Use our mobile app to report illegal cutting, dumping, or other threats to mangroves.
-              </p>
-            </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md text-center">
-              <div className="text-3xl md:text-4xl mb-2 md:mb-4">🛰️</div>
-              <h3 className="text-lg md:text-xl font-semibold text-green-800 mb-2 md:mb-3">
-                AI Verification
-              </h3>
-              <p className="text-green-700 text-sm md:text-base">
-                Our system uses satellite data and AI to validate reports for accuracy.
-              </p>
-            </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md text-center">
-              <div className="text-3xl md:text-4xl mb-2 md:mb-4">🏆</div>
-              <h3 className="text-lg md:text-xl font-semibold text-green-800 mb-2 md:mb-3">
-                Earn Rewards
-              </h3>
-              <p className="text-green-700 text-sm md:text-base">
-                Collect points, climb leaderboards, and receive rewards for your contributions.
-              </p>
+            {/* Reports Card */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <div className="text-4xl font-bold mb-2 text-green-300">
+                {loading ? "..." : pointsData.total_reports}
+              </div>
+              <div className="text-lg font-semibold mb-2">Reports Submitted</div>
+              <div className="text-sm opacity-90">
+                Contributing to mangrove protection
+              </div>
             </div>
           </div>
-        </section>
 
-        {/* How It Works Section */}
-        <section id="how-it-works" className="w-full max-w-4xl mb-12 md:mb-20">
-          <h2 className="text-2xl md:text-3xl font-bold text-green-900 text-center mb-8 md:mb-12">
-            How It Works
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md">
-              <h3 className="text-lg md:text-xl font-semibold text-green-800 mb-2 md:mb-3">1. Sign Up & Download</h3>
-              <p className="text-green-700 text-sm md:text-base">Create an account and download our mobile app to get started.</p>
-            </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md md:mt-8">
-              <h3 className="text-lg md:text-xl font-semibold text-green-800 mb-2 md:mb-3">2. Report Issues</h3>
-              <p className="text-green-700 text-sm md:text-base">When you spot a threat to mangroves, report it with geotagged photos.</p>
-            </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md">
-              <h3 className="text-lg md:text-xl font-semibold text-green-800 mb-2 md:mb-3">3. AI Validation</h3>
-              <p className="text-green-700 text-sm md:text-base">Our system verifies reports using satellite imagery and AI analysis.</p>
-            </div>
-            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md md:mt-8">
-              <h3 className="text-lg md:text-xl font-semibold text-green-800 mb-2 md:mb-3">4. Earn Points</h3>
-              <p className="text-green-700 text-sm md:text-base">Get rewarded with points for verified reports and climb the leaderboard.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Impact Section */}
-        <section id="impact" className="w-full max-w-5xl mb-10 md:mb-16">
-          <h2 className="text-2xl md:text-3xl font-bold text-green-900 text-center mb-8 md:mb-12">
-            Our Impact
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 text-center">
-            <div className="bg-green-100 p-3 md:p-4 rounded-2xl">
-              <div className="text-xl md:text-3xl font-bold text-green-900">250+</div>
-              <div className="text-green-700 text-xs md:text-base">Communities</div>
-            </div>
-            <div className="bg-green-100 p-3 md:p-4 rounded-2xl">
-              <div className="text-xl md:text-3xl font-bold text-green-900">5,280</div>
-              <div className="text-green-700 text-xs md:text-base">Reports Filed</div>
-            </div>
-            <div className="bg-green-100 p-3 md:p-4 rounded-2xl">
-              <div className="text-xl md:text-3xl font-bold text-green-900">340</div>
-              <div className="text-green-700 text-xs md:text-base">Hectares Protected</div>
-            </div>
-            <div className="bg-green-100 p-3 md:p-4 rounded-2xl">
-              <div className="text-xl md:text-3xl font-bold text-green-900">12,500+</div>
-              <div className="text-green-700 text-xs md:text-base">Trees Saved</div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-green-900 text-white py-8 md:py-12 px-4 md:px-6">
-        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="text-2xl">🌿</span>
-              <h2 className="text-lg md:text-xl font-bold">Mangrove Watch</h2>
-            </div>
-            <p className="text-green-200 text-sm md:text-base">
-              Protecting coastal biodiversity through community participation and technology.
-            </p>
-          </div>
-          <div>
-            <h3 className="text-base md:text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-green-200 hover:text-white transition-colors text-sm md:text-base">About Us</a></li>
-              <li><a href="#" className="text-green-200 hover:text-white transition-colors text-sm md:text-base">Get Involved</a></li>
-              <li><a href="#" className="text-green-200 hover:text-white transition-colors text-sm md:text-base">Resources</a></li>
-              <li><a href="#" className="text-green-200 hover:text-white transition-colors text-sm md:text-base">Contact</a></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-base md:text-lg font-semibold mb-4">Legal</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="text-green-200 hover:text-white transition-colors text-sm md:text-base">Privacy Policy</a></li>
-              <li><a href="#" className="text-green-200 hover:text-white transition-colors text-sm md:text-base">Terms of Service</a></li>
-              <li><a href="#" className="text-green-200 hover:text-white transition-colors text-sm md:text-base">Cookie Policy</a></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-base md:text-lg font-semibold mb-4">Connect With Us</h3>
-            <div className="flex space-x-4 mb-4">
-              <a href="#" className="text-green-200 hover:text-white transition-colors text-xl md:text-2xl" aria-label="Facebook">📘</a>
-              <a href="#" className="text-green-200 hover:text-white transition-colors text-xl md:text-2xl" aria-label="Twitter">🐦</a>
-              <a href="#" className="text-green-200 hover:text-white transition-colors text-xl md:text-2xl" aria-label="Instagram">📸</a>
-              <a href="#" className="text-green-200 hover:text-white transition-colors text-xl md:text-2xl" aria-label="YouTube">📺</a>
-            </div>
-            <p className="text-green-200 text-sm md:text-base">support@mangrovewatch.org</p>
+          <div className="mt-8">
+            <Link
+              to="/report"
+              className="inline-flex items-center px-6 py-3 bg-white text-green-600 font-semibold rounded-full hover:bg-green-50 transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              <span className="mr-2">📸</span>
+              Submit New Report
+            </Link>
           </div>
         </div>
-        <div className="container mx-auto mt-6 md:mt-8 pt-6 md:pt-8 border-t border-green-800 text-center text-green-300 text-xs md:text-base">
-          <p>© {new Date().getFullYear()} Mangrove Watch. All rights reserved.</p>
+      </div>
+    </div>
+  );
+};
+
+export default function Landing() {
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-green-100">
+      <Navbar />
+      
+      {/* User Points Section */}
+      <UserPointsSection />
+
+      {/* Hero Section */}
+      <section className="container mx-auto px-6 py-20 text-center">
+        <h1 className="text-5xl md:text-6xl font-bold text-gray-800 mb-6 leading-tight">
+          Protect Our
+          <span className="text-green-600 block">Mangrove Ecosystems</span>
+        </h1>
+        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+          Join our community-driven initiative to monitor and protect vital mangrove forests through AI-powered reporting and satellite analysis.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link
+            to="/report"
+            className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Report an Issue
+          </Link>
+          <Link
+            to="/about"
+            className="bg-white text-green-600 border-2 border-green-600 hover:bg-green-50 px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Learn More
+          </Link>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="bg-white py-20">
+        <div className="container mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
+            How It Works
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-6 rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+              <div className="text-4xl mb-4">📱</div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-800">Report</h3>
+              <p className="text-gray-600">
+                Upload photos of mangrove issues using our mobile-friendly platform
+              </p>
+            </div>
+            <div className="text-center p-6 rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+              <div className="text-4xl mb-4">🤖</div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-800">Analyze</h3>
+              <p className="text-gray-600">
+                AI validates reports and satellite data confirms environmental changes
+              </p>
+            </div>
+            <div className="text-center p-6 rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+              <div className="text-4xl mb-4">🛡️</div>
+              <h3 className="text-xl font-semibold mb-3 text-gray-800">Protect</h3>
+              <p className="text-gray-600">
+                Conservation teams respond to verified threats to preserve ecosystems
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Impact Section */}
+      <section className="bg-green-600 text-white py-20">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-3xl font-bold mb-12">Our Global Impact</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div>
+              <div className="text-4xl font-bold mb-2">500+</div>
+              <div className="text-lg">Reports Submitted</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">1,200</div>
+              <div className="text-lg">Hectares Protected</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">25</div>
+              <div className="text-lg">Countries Involved</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container mx-auto px-6 py-20 text-center">
+        <h2 className="text-3xl font-bold text-gray-800 mb-6">
+          Ready to Make a Difference?
+        </h2>
+        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          Every report counts. Join thousands of environmental guardians protecting our planet's most vital ecosystems.
+        </p>
+        <Link
+          to="/signup"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+        >
+          Get Started Today
+        </Link>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-white py-12">
+        <div className="container mx-auto px-6 text-center">
+          <p className="text-gray-400">
+            © 2024 Mangrove Watch. All rights reserved. Protecting ecosystems through technology.
+          </p>
         </div>
       </footer>
     </div>

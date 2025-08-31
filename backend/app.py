@@ -26,21 +26,194 @@ pipeline = full_pipe.Pipeline()  # <-- Add this line
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database", "mangrove_watch.db")
 
+def calculate_points(result):
+    """Calculate points based on AI validation and satellite data"""
+    satellite_data = result.get('satellite_vegetation_change')
+    label = result.get('label', '')
+    
+    # Check if AI detected mangrove issue
+    if label and 'mangrove' in label.lower():
+        if satellite_data is not None and satellite_data != 'null':
+            try:
+                satellite_value = float(satellite_data)
+                if satellite_value > 5:
+                    return 20  # High evidence
+                elif satellite_value > 0:
+                    return 15  # Moderate evidence
+                elif satellite_value < 0:
+                    return 15  # Vegetation loss
+                else:
+                    return 10  # No significant change
+            except (ValueError, TypeError):
+                return 10  # AI detected but no satellite data
+        else:
+            return 10  # AI detected but no satellite data
+    else:
+        return 0  # No mangrove issue detected
+
+def update_user_points(user_id, points_earned, points_type, description, report_id=None):
+    """Update user points and add to history"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    try:
+        # Update user points
+        cursor.execute(
+            "UPDATE users SET points = points + ?, total_reports = total_reports + 1 WHERE id = ?",
+            (points_earned, user_id)
+        )
+        
+        # Add to points history
+        cursor.execute(
+            "INSERT INTO points_history (user_id, points_earned, points_type, description, report_id) VALUES (?, ?, ?, ?, ?)",
+            (user_id, points_earned, points_type, description, report_id)
+        )
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error updating points: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+def get_user_points(user_id):
+    """Get user points and stats"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute(
+            "SELECT points, total_reports FROM users WHERE id = ?",
+            (user_id,)
+        )
+        result = cursor.fetchone()
+        
+        if result:
+            return {
+                "points": result[0],
+                "total_reports": result[1]
+            }
+        return None
+    except Exception as e:
+        print(f"Error getting user points: {e}")
+        return None
+    finally:
+        conn.close()
+
 # Health check
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({"message": "Backend Flask API is running!"})
+
+# Get user points
+@app.route('/user/points', methods=['GET'])
+def get_points():
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({"status": "error", "message": "user_id is required"}), 400
+        
+        points_data = get_user_points(int(user_id))
+        if points_data:
+            return jsonify({"status": "success", "data": points_data})
+        else:
+            return jsonify({"status": "error", "message": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# Get user points history
+@app.route('/user/points/history', methods=['GET'])
+def get_points_history():
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({"status": "error", "message": "user_id is required"}), 400
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT points_earned, points_type, description, created_at 
+            FROM points_history 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT 20
+        """, (int(user_id),))
+        
+        history = cursor.fetchall()
+        conn.close()
+        
+        history_data = []
+        for row in history:
+            history_data.append({
+                "points_earned": row[0],
+                "points_type": row[1],
+                "description": row[2],
+                "created_at": row[3]
+            })
+        
+        return jsonify({"status": "success", "data": history_data})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# Get user reports/workflow results
+@app.route('/user/reports', methods=['GET'])
+def get_user_reports():
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({"status": "error", "message": "user_id is required"}), 400
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, confidence, latitude, longitude, label, satellite_vegetation_change, 
+                   status, points_earned, created_at
+            FROM workflow_results 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC 
+            LIMIT 50
+        """, (int(user_id),))
+        
+        reports = cursor.fetchall()
+        conn.close()
+        
+        reports_data = []
+        for row in reports:
+            reports_data.append({
+                "id": row[0],
+                "confidence": row[1],
+                "latitude": row[2],
+                "longitude": row[3],
+                "label": row[4],
+                "satellite_vegetation_change": row[5],
+                "status": row[6],
+                "points_earned": row[7],
+                "created_at": row[8]
+            })
+        
+        return jsonify({"status": "success", "data": reports_data})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # Example: Run full pipeline
 @app.route("/run-pipeline", methods=["POST"])
 def run_pipeline():
     try:
+        user_id = None
+        description = ""
+        
         # Check if request is multipart/form-data (file upload)
         if request.content_type and request.content_type.startswith("multipart/form-data"):
             image_file = request.files.get("image")
             mode = request.form.get("mode")
             description = request.form.get("description", "")
+            user_id = request.form.get("user_id")
 
             if mode == "image":
                 if not image_file:
@@ -50,7 +223,40 @@ def run_pipeline():
                 image_file.save(image_path)
                 # Pass image_path to pipeline
                 result = pipeline.run_on_image(image_path)
-                # Optionally, you can save description or handle it as needed
+                
+                # Calculate points and update user if user_id is provided
+                if user_id:
+                    points_earned = calculate_points(result)
+                    if points_earned > 0:
+                        # Save result to database
+                        conn = sqlite3.connect(DB_PATH)
+                        cursor = conn.cursor()
+                        cursor.execute("""
+                            INSERT INTO workflow_results 
+                            (user_id, confidence, latitude, longitude, label, satellite_vegetation_change, status, points_earned)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            int(user_id),
+                            result.get('confidence'),
+                            result.get('latitude'),
+                            result.get('longitude'),
+                            result.get('label'),
+                            result.get('satellite_vegetation_change'),
+                            'completed',
+                            points_earned
+                        ))
+                        report_id = cursor.lastrowid
+                        conn.commit()
+                        conn.close()
+                        
+                        # Update user points
+                        points_type = "report_submission"
+                        points_description = f"Report: {result.get('label', 'Mangrove issue detected')}"
+                        update_user_points(int(user_id), points_earned, points_type, points_description, report_id)
+                        
+                        # Add points info to result
+                        result['points_earned'] = points_earned
+                
                 return jsonify({"status": "success", "result": result})
 
             else:
@@ -59,6 +265,8 @@ def run_pipeline():
         # Otherwise, handle JSON as before
         data = request.get_json()
         mode = data.get("mode")
+        user_id = data.get("user_id")
+        description = data.get("description", "")
 
         if mode == "folder":
             folder = data.get("folder", "Data")
@@ -79,6 +287,39 @@ def run_pipeline():
 
         else:
             return jsonify({"status": "error", "message": "Invalid mode. Use 'folder', 'image', or 'coordinates'"})
+
+        # Calculate points and update user if user_id is provided
+        if user_id:
+            points_earned = calculate_points(result)
+            if points_earned > 0:
+                # Save result to database
+                conn = sqlite3.connect(DB_PATH)
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO workflow_results 
+                    (user_id, confidence, latitude, longitude, label, satellite_vegetation_change, status, points_earned)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    int(user_id),
+                    result.get('confidence'),
+                    result.get('latitude'),
+                    result.get('longitude'),
+                    result.get('label'),
+                    result.get('satellite_vegetation_change'),
+                    'completed',
+                    points_earned
+                ))
+                report_id = cursor.lastrowid
+                conn.commit()
+                conn.close()
+                
+                # Update user points
+                points_type = "report_submission"
+                points_description = f"Report: {result.get('label', 'Mangrove issue detected')}"
+                update_user_points(int(user_id), points_earned, points_type, points_description, report_id)
+                
+                # Add points info to result
+                result['points_earned'] = points_earned
 
         return jsonify({"status": "success", "result": result})
 
@@ -210,11 +451,13 @@ def signup():
             "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
             (username, email, password_hash)
         )
+        user_id = cursor.lastrowid
         conn.commit()
         conn.close()
         return jsonify({
             "status": "success", 
             "message": "User registered successfully",
+            "user_id": user_id,
             "username": username,
             "email": email
         })

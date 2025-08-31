@@ -328,29 +328,7 @@ export default function About() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 pb-16 relative z-10">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-          <AnimatedStatCard
-            number="10M+"
-            title="Mangroves Protected"
-            description="Across 15 countries worldwide through our initiatives"
-            delay={0.1}
-          />
-          
-          <AnimatedStatCard
-            number="5K+"
-            title="Active Volunteers"
-            description="Contributing to monitoring and conservation efforts"
-            delay={0.2}
-          />
-          
-          <AnimatedStatCard
-            number="200+"
-            title="Scientific Studies"
-            description="Supported to advance mangrove conservation science"
-            delay={0.3}
-          />
-        </div>
+       
 
         {/* Tabbed Content Section */}
         <motion.div 
