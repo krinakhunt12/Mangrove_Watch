@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { User, Mail, Settings, Shield, RefreshCw } from "lucide-react";
 import { getAuth, isAuthenticated } from "../utils/auth";
-
+import Navbar from "../components/Navbar";
 export default function Profile() {
   const [userData, setUserData] = useState(null);
   const [userStats, setUserStats] = useState(null);
@@ -139,6 +139,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-8">
+      <Navbar/>
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">

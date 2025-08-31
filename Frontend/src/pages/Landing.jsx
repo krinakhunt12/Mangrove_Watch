@@ -201,13 +201,59 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white py-12">
-        <div className="container mx-auto px-6 text-center">
-          <p className="text-gray-400">
-            © 2024 Mangrove Watch. All rights reserved. Protecting ecosystems through technology.
-          </p>
+    <footer className="bg-gray-800 text-white py-12">
+  <div className="container mx-auto px-6">
+    {/* Top Section: Logo + Description */}
+    <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-8">
+      <div className="mb-6 md:mb-0">
+        <h2 className="text-2xl font-bold mb-2">Mangrove Watch</h2>
+        <p className="text-gray-400 max-w-sm">
+          Protecting ecosystems through technology. Stay connected and help us monitor and conserve mangroves worldwide.
+        </p>
+      </div>
+
+      {/* Quick Links */}
+      <div className="flex flex-col md:flex-row gap-12">
+        <div>
+          <h3 className="font-semibold mb-2">Quick Links</h3>
+          <ul className="text-gray-400 space-y-1">
+            <li><a href="#" className="hover:text-white">Home</a></li>
+            <li><a href="#" className="hover:text-white">About</a></li>
+            <li><a href="#" className="hover:text-white">Projects</a></li>
+            <li><a href="#" className="hover:text-white">Contact</a></li>
+          </ul>
         </div>
-      </footer>
+
+        {/* Contact Info */}
+        <div>
+          <h3 className="font-semibold mb-2">Contact</h3>
+          <ul className="text-gray-400 space-y-1">
+            <li>Email: <a href="mailto:info@mangrovewatch.org" className="hover:text-white">info@mangrovewatch.org</a></li>
+            <li>Phone: <a href="tel:+911234567890" className="hover:text-white">+91 12345 67890</a></li>
+            <li>Location: Surat, India</li>
+          </ul>
+        </div>
+
+        {/* Social Links */}
+        <div>
+          <h3 className="font-semibold mb-2">Follow Us</h3>
+          <div className="flex space-x-4 mt-2">
+            <a href="#" className="text-gray-400 hover:text-white">Facebook</a>
+            <a href="#" className="text-gray-400 hover:text-white">Twitter</a>
+            <a href="#" className="text-gray-400 hover:text-white">Instagram</a>
+            <a href="#" className="text-gray-400 hover:text-white">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Bottom Section */}
+    <div className="border-t border-gray-700 pt-6 text-center text-gray-400 text-sm">
+      © 2024 Mangrove Watch. All rights reserved.
+    </div>
+  </div>
+</footer>
+
     </div>
   );
 }
