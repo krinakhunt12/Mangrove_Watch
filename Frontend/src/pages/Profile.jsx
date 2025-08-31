@@ -18,7 +18,7 @@ export default function Profile() {
   const fetchUserStats = async (userId) => {
     try {
       setStatsLoading(true);
-      const response = await fetch(`http://localhost:5000/user/points?user_id=${userId}`);
+      const response = await fetch(`http://localhost:5000/user/stats?user_id=${userId}`);
       const result = await response.json();
       
       if (result.status === "success") {
@@ -35,26 +35,6 @@ export default function Profile() {
     }
   };
 
-  // Fetch points history
-  const fetchPointsHistory = async (userId) => {
-    try {
-      const response = await fetch(`http://localhost:5000/user/points/history?user_id=${userId}`);
-      const result = await response.json();
-      
-      if (result.status === "success") {
-        // Calculate verified reports (reports with points earned)
-        const verifiedReports = result.data.filter(item => item.points_earned > 0).length;
-        setUserStats(prev => ({
-          ...prev,
-          verified_reports: verifiedReports,
-          points_history: result.data
-        }));
-      }
-    } catch (error) {
-      console.error("Error fetching points history:", error);
-    }
-  };
-
   // Fetch user reports
   const fetchUserReports = async (userId) => {
     try {
@@ -64,8 +44,7 @@ export default function Profile() {
       if (result.status === "success") {
         // Calculate additional statistics
         const totalReports = result.data.length;
-        const verifiedReports = result.data.filter(report => report.points_earned > 0).length;
-        const totalPointsEarned = result.data.reduce((sum, report) => sum + (report.points_earned || 0), 0);
+        const verifiedReports = result.data.filter(report => report.label && report.label.includes("mangrove")).length;
         const avgConfidence = result.data.length > 0 
           ? result.data.reduce((sum, report) => sum + (report.confidence || 0), 0) / result.data.length 
           : 0;
@@ -74,7 +53,6 @@ export default function Profile() {
           ...prev,
           total_reports: totalReports,
           verified_reports: verifiedReports,
-          total_points_earned: totalPointsEarned,
           avg_confidence: avgConfidence,
           reports: result.data
         }));
@@ -95,25 +73,23 @@ export default function Profile() {
     
     if (auth?.user_id) {
       fetchUserStats(auth.user_id);
-      fetchPointsHistory(auth.user_id);
       fetchUserReports(auth.user_id);
     }
     
     setLoading(false);
   }, [navigate]);
 
-  // Listen for points updates from Report page
+  // Listen for reports updates from Report page
   useEffect(() => {
-    const handlePointsUpdate = () => {
+    const handleReportsUpdate = () => {
       if (userData?.user_id) {
         fetchUserStats(userData.user_id);
-        fetchPointsHistory(userData.user_id);
         fetchUserReports(userData.user_id);
       }
     };
 
-    window.addEventListener('pointsUpdated', handlePointsUpdate);
-    return () => window.removeEventListener('pointsUpdated', handlePointsUpdate);
+    window.addEventListener('reportsUpdated', handleReportsUpdate);
+    return () => window.removeEventListener('reportsUpdated', handleReportsUpdate);
   }, [userData]);
 
   if (loading) {
@@ -218,7 +194,6 @@ export default function Profile() {
                   onClick={() => {
                     if (userData?.user_id) {
                       fetchUserStats(userData.user_id);
-                      fetchPointsHistory(userData.user_id);
                       fetchUserReports(userData.user_id);
                     }
                   }}
@@ -263,10 +238,10 @@ export default function Profile() {
                     {statsLoading ? (
                       <div className="animate-pulse">...</div>
                     ) : (
-                      userStats?.points || 0
+                      userStats?.avg_confidence ? `${Math.round(userStats.avg_confidence * 100)}%` : "0%"
                     )}
                   </div>
-                  <div className="text-yellow-700 text-sm">Points Earned</div>
+                  <div className="text-yellow-700 text-sm">Avg Confidence</div>
                 </div>
               </div>
               
@@ -291,21 +266,6 @@ export default function Profile() {
                   </div>
                 </div>
               )}
-              
-              {/* Points History Preview */}
-              {userStats?.points_history && userStats.points_history.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-green-200">
-                  <h4 className="text-sm font-semibold text-green-900 mb-3">Recent Activity</h4>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
-                    {userStats.points_history.slice(0, 3).map((item, index) => (
-                      <div key={index} className="flex justify-between items-center text-xs p-2 bg-green-50 rounded">
-                        <span className="text-green-700 truncate">{item.description}</span>
-                        <span className="text-green-600 font-semibold">+{item.points_earned}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Recent Reports Preview */}
               {userStats?.reports && userStats.reports.length > 0 && (
@@ -319,11 +279,11 @@ export default function Profile() {
                             {report.label || 'Mangrove Issue'}
                           </span>
                           <span className={`text-xs px-2 py-1 rounded ${
-                            report.points_earned > 0 
+                            report.label && report.label.includes("mangrove")
                               ? 'bg-green-100 text-green-700' 
                               : 'bg-gray-100 text-gray-600'
                           }`}>
-                            {report.points_earned > 0 ? `+${report.points_earned}pts` : 'No points'}
+                            {report.label && report.label.includes("mangrove") ? 'Verified' : 'Pending'}
                           </span>
                         </div>
                         <div className="text-blue-600 text-xs">

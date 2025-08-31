@@ -760,13 +760,12 @@ export default function Report() {
 
       if (result.status === "success") {
 
-        // Check for satellite vegetation change and suspicious activity
+        // Check for satellite vegetation change and AI analysis
         const satelliteData = result.result?.satellite_vegetation_change;
         const confidence = result.result?.confidence;
         const label = result.result?.label;
         
         let validationMessage = "";
-        let pointsEarned = 0;
         
         // Check if AI detected something from our labels list
         if (label && label.includes("mangrove")) {
@@ -774,29 +773,23 @@ export default function Report() {
           if (satelliteData !== null && satelliteData !== undefined) {
             // Both AI and satellite data available
             if (satelliteData > 5) { // Significant vegetation change threshold
-              pointsEarned = 20; // Points only when both AI and satellite confirm
-              validationMessage = `🎯 Excellent! Both AI analysis and satellite data confirm significant vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. You were right! +${pointsEarned} points earned.`;
+              validationMessage = `🎯 Excellent! Both AI analysis and satellite data confirm significant vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. Your report has been verified!`;
             } else if (satelliteData > 0 && satelliteData <= 5) {
-              pointsEarned = 15; // Moderate change confirmed by both
-              validationMessage = `📊 Both AI and satellite analysis show moderate vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. Valid report! +${pointsEarned} points earned.`;
+              validationMessage = `📊 Both AI and satellite analysis show moderate vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. Valid report!`;
             } else if (satelliteData < 0) {
-              pointsEarned = 15; // Vegetation loss confirmed by both
-              validationMessage = `📉 Both AI and satellite analysis show ${Math.abs(satelliteData.toFixed(1))}% vegetation loss in the last 30 days. Valid report! +${pointsEarned} points earned.`;
+              validationMessage = `📉 Both AI and satellite analysis show ${Math.abs(satelliteData.toFixed(1))}% vegetation loss in the last 30 days. Valid report!`;
             } else {
               // AI detected but satellite shows no significant change
-              pointsEarned = 10; // Points for AI detection only
-              validationMessage = `✅ AI detected mangrove issue (${label}), but satellite analysis shows no significant vegetation change in the last 30 days. +${pointsEarned} points earned.`;
+              validationMessage = `✅ AI detected mangrove issue (${label}), but satellite analysis shows no significant vegetation change in the last 30 days. Our team will investigate further.`;
             }
           } else {
             // AI detected but no satellite data available
-            pointsEarned = 10; // Points for AI detection only
-            validationMessage = `✅ AI detected mangrove issue (${label}). Satellite data unavailable for this location. Our team will investigate further. +${pointsEarned} points earned.`;
+            validationMessage = `✅ AI detected mangrove issue (${label}). Satellite data unavailable for this location. Our team will investigate further.`;
           }
         } else {
           // AI did not detect mangrove issue from our labels
-          pointsEarned = 0; // No points for non-mangrove issues
           if (satelliteData !== null && satelliteData !== undefined) {
-            validationMessage = `📝 Report submitted. Satellite analysis shows ${satelliteData.toFixed(1)}% vegetation change in the last 30 days, but AI did not detect a mangrove-related issue.`;
+            validationMessage = `📝 Report submitted. Satellite analysis shows ${satelliteData.toFixed(1)}% vegetation change in the last 30 days, but AI did not detect a mangrove-related issue. Our team will review your submission.`;
           } else {
             validationMessage = `📝 Report submitted successfully! Our team will review your submission.`;
           }
@@ -809,10 +802,8 @@ export default function Report() {
         
         showToast(validationMessage, "success");
         
-        // Dispatch event to update points in Profile page
-        if (pointsEarned > 0) {
-          window.dispatchEvent(new Event('pointsUpdated'));
-        }
+        // Dispatch event to update stats in Profile page
+        window.dispatchEvent(new Event('reportsUpdated'));
         
         // Reset form
         setSelectedImage(null);

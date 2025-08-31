@@ -43,7 +43,6 @@ const leaderboard = [
 export default function Home() {
   const [user] = useState({
     name: "You",
-    points: 75,
     badge: "Mangrove Guardian",
     level: "Eco Defender",
     reports: 8,
@@ -66,7 +65,6 @@ export default function Home() {
               <h2 className="text-2xl md:text-3xl font-extrabold text-green-900">Welcome, {user.name}</h2>
             </div>
             <div className="flex flex-col md:flex-row items-center gap-2">
-              <span className="text-green-700 font-semibold">Points: {user.points}</span>
               <span className="text-green-700 font-semibold">Reports: {user.reports}</span>
               <span className="text-green-700 font-semibold">Level: {user.level}</span>
             </div>
@@ -141,11 +139,7 @@ export default function Home() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-5 bg-white">
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="bg-green-50 p-3 rounded-xl text-center">
-                    <div className="text-2xl font-bold text-green-700">{user.points}</div>
-                    <div className="text-sm text-green-600">Points</div>
-                  </div>
+                <div className="grid grid-cols-1 gap-4 mb-4">
                   <div className="bg-green-50 p-3 rounded-xl text-center">
                     <div className="text-2xl font-bold text-green-700">{user.reports}</div>
                     <div className="text-sm text-green-600">Reports</div>
