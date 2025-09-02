@@ -16,7 +16,7 @@ import sqlite3
 app = Flask(__name__)
 
 # 2️⃣ Enable CORS after app is defined
-CORS(app, origins=["ttps://mangrove-watch.vercel.app","http://localhost:5173"], supports_credentials=True)
+CORS(app, origins=["https://mangrove-watch.vercel.app","http://localhost:5173","http://127.0.0.1:5173"], supports_credentials=True)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -408,4 +408,4 @@ def login():
         return jsonify({"status": "error", "message": "Invalid username or password"}), 401
 
 if __name__ == '__main__':
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(host="127.0.0.1", port=5000, debug=True)
