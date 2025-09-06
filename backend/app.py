@@ -2,9 +2,11 @@ from flask import Flask, request, jsonify, make_response
 import os
 import full_pipe  # example import, adjust as per your logic
 import ai_validator
+validator = ai_validator.AIValidator()
 import bot_handler
 import utils
 import satelite_check
+from satelite_check import get_vegetation_change
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from geopy.geocoders import Nominatim
