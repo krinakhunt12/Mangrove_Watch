@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # --------------------------    
 # Load BOT TOKEN
 # --------------------------
-BOT_TOKEN = "8451436867:AAGqnbOk3rjUbIAJWHF64YpHrUUMgcYyqHU"  # <---- replace with your token!
+BOT_TOKEN = "8439090173:AAFUqUTQV-3dbLP2uEbug1g1z0fE_9dIwd8"  # <---- updated token
 
 # Initialize pipeline
 pipeline = Pipeline()

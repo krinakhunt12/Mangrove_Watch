@@ -49,14 +49,12 @@ def get_user_stats(user_id):
     """Get user stats"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
     try:
         cursor.execute(
-            "SELECT total_reports FROM users WHERE id = ?",
+            "SELECT COUNT(*) FROM workflow_results WHERE user_id = ?",
             (user_id,)
         )
         result = cursor.fetchone()
-        
         if result:
             return {
                 "total_reports": result[0]
