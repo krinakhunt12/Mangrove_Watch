@@ -408,4 +408,6 @@ def login():
         return jsonify({"status": "error", "message": "Invalid username or password"}), 401
 
 if __name__ == '__main__':
+    print("Starting Flask server...")
+    print("Server will be available at: http://127.0.0.1:5000")
     app.run(host="127.0.0.1", port=5000, debug=True)

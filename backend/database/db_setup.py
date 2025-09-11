@@ -28,6 +28,14 @@ CREATE TABLE IF NOT EXISTS users (
 );
 """)
 
+# Add total_reports column if it doesn't exist (for existing databases)
+try:
+    cursor.execute("""
+    ALTER TABLE users ADD COLUMN total_reports INTEGER DEFAULT 0;
+    """)
+except sqlite3.OperationalError:
+    pass  # Column already exists
+
 # Workflow results table
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS workflow_results (
@@ -43,6 +51,14 @@ CREATE TABLE IF NOT EXISTS workflow_results (
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 """)
+
+# Add confidence column if it doesn't exist (for existing databases)
+try:
+    cursor.execute("""
+    ALTER TABLE workflow_results ADD COLUMN confidence REAL;
+    """)
+except sqlite3.OperationalError:
+    pass  # Column already exists
 
 # Commit changes
 conn.commit()

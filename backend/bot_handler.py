@@ -1,7 +1,11 @@
 import logging
+import os
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut, GeocoderUnavailable
 from full_pipe import Pipeline   # <-- use pipeline instead of direct satellite call
 
 # --------------------------
@@ -10,13 +14,15 @@ from full_pipe import Pipeline   # <-- use pipeline instead of direct satellite 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --------------------------    
-# Load BOT TOKEN
-# --------------------------
-BOT_TOKEN = "8439090173:AAFUqUTQV-3dbLP2uEbug1g1z0fE_9dIwd8"  # <---- updated token
+//# --------------------------    
+//# Load BOT TOKEN
+//# --------------------------
+# Read token from environment to avoid hardcoding secrets
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
-# Initialize pipeline
+# Initialize pipeline and a small thread pool for blocking calls
 pipeline = Pipeline()
+executor = ThreadPoolExecutor(max_workers=4)
 
 # --------------------------
 # Start command
@@ -34,49 +40,70 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # Handle text input (location name / coordinates)
 # --------------------------
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text.strip()
+    if not update.message:
+        return
+
+    text = (update.message.text or "").strip()
     logger.info(f"[User Input] {text}")
+
+    # Quick acknowledgement to avoid Telegram spinner
+    await update.message.reply_text("⏳ Processing your request... This may take a few seconds.")
 
     lat, lon = None, None
 
-    # Case 1: Coordinates given
-    if "," in text:
-        try:
-            parts = text.split(",")
-            lat = float(parts[0].strip())
-            lon = float(parts[1].strip())
-        except:
-            await update.message.reply_text("⚠️ Invalid coordinates format. Try: 21.17, 72.83")
-            return
+    try:
+        # Case 1: Coordinates given
+        if "," in text:
+            try:
+                parts = text.split(",")
+                lat = float(parts[0].strip())
+                lon = float(parts[1].strip())
+            except Exception:
+                await update.message.reply_text("⚠️ Invalid coordinates format. Try: 21.17, 72.83")
+                return
 
-    # Case 2: Place name (convert via geocoding)
-    else:
-        geolocator = Nominatim(user_agent="agro_guardian_bot")
-        try:
-            location = geolocator.geocode(text, timeout=10)
-        except Exception as e:
-            await update.message.reply_text("⚠️ Geocoding service timeout. Please try again.")
-            logger.error(f"Geocoding error: {e}")
-            return
-
-        if location:
-            lat, lon = location.latitude, location.longitude
+        # Case 2: Place name (convert via geocoding)
         else:
-            await update.message.reply_text("❌ Could not find that location. Try again.")
-            return
+            geolocator = Nominatim(user_agent="agro_guardian_bot")
 
-    # Run full pipeline on coordinates
-    result = pipeline.run_on_coordinates(lat, lon)
-    veg_change = result.get("satellite_vegetation_change", "N/A")
+            loop = asyncio.get_running_loop()
+            try:
+                # Geocoding can block; run it in a thread
+                location = await loop.run_in_executor(
+                    executor, lambda: geolocator.geocode(text, timeout=10)
+                )
+            except (GeocoderTimedOut, GeocoderUnavailable) as e:
+                await update.message.reply_text("⚠️ Geocoding service timeout/unavailable. Please try again.")
+                logger.error(f"Geocoding error: {e}")
+                return
 
-    await update.message.reply_text(
-        f"📍 Location: {lat}, {lon}\n🛰️ Vegetation Change: {veg_change}%"
-    )
+            if location:
+                lat, lon = location.latitude, location.longitude
+            else:
+                await update.message.reply_text("❌ Could not find that location. Try again.")
+                return
+
+        # Run full pipeline on coordinates (potentially blocking IO/CPU) in a thread
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(executor, lambda: pipeline.run_on_coordinates(lat, lon))
+        veg_change = result.get("satellite_vegetation_change", "N/A")
+
+        await update.message.reply_text(
+            f"📍 Location: {lat}, {lon}\n🛰️ Vegetation Change: {veg_change}%"
+        )
+
+    except Exception as e:
+        logger.exception("Error handling user message")
+        await update.message.reply_text("❌ Sorry, something went wrong while processing your request.")
 
 # --------------------------
 # Main
 # --------------------------
 def main():
+    if not BOT_TOKEN:
+        logger.error("TELEGRAM_BOT_TOKEN is not set. Please set the environment variable and restart.")
+        raise SystemExit(1)
+
     app = Application.builder().token(BOT_TOKEN).build()
 
     # Commands
@@ -85,8 +112,8 @@ def main():
     # Messages
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
-    logger.info("✅ Telegram bot is running...")
-    app.run_polling()
+    logger.info("✅ Telegram bot is running... (polling)")
+    app.run_polling(close_loop=False)
 
 if __name__ == "__main__":
     main()

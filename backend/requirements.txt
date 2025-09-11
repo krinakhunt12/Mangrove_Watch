@@ -1,9 +1,10 @@
 # Core backend
 flask==2.3.2
-flask-cors==3.0.11
+flask-cors==4.0.0
 gunicorn==20.1.0
 requests==2.31.0
 Pillow>=10.0
+werkzeug>=2.3.3,<3
 
 # Google Earth Engine
 earthengine-api>=0.1.315
@@ -34,3 +35,7 @@ typing-inspection==0.4.1
 typing_extensions==4.15.0
 annotated-types==0.7.0
 idna==3.10
+
+# Additional dependencies for the project
+geopy==2.4.1
+python-telegram-bot==21.6
