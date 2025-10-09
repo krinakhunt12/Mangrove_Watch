@@ -4,12 +4,21 @@ import datetime
 # 🔹 Your Google Cloud project ID
 PROJECT_ID = "elevated-bonito-470600-h9"
 
-# Initialize Earth Engine (force project auth → no warning)
-try:
-    ee.Initialize(project=PROJECT_ID)
-    print("[INFO] Google Earth Engine initialized successfully with project ✅")
-except Exception as e:
-    print(f"[ERROR] EE Initialization failed: {e}")
+# Global flag to track initialization
+_ee_initialized = False
+
+def _initialize_ee():
+    """Lazy initialization of Google Earth Engine"""
+    global _ee_initialized
+    if not _ee_initialized:
+        try:
+            ee.Initialize(project=PROJECT_ID)
+            print("[INFO] Google Earth Engine initialized successfully with project ✅")
+            _ee_initialized = True
+        except Exception as e:
+            print(f"[ERROR] EE Initialization failed: {e}")
+            _ee_initialized = False
+    return _ee_initialized
 
 
 def get_vegetation_change(latitude, longitude):
@@ -17,6 +26,11 @@ def get_vegetation_change(latitude, longitude):
     Compute NDVI change (%) in last 30 days around a GPS point.
     Returns float or None if data unavailable.
     """
+    # Initialize EE only when needed
+    if not _initialize_ee():
+        print("[WARN] Google Earth Engine not available, returning None")
+        return None
+        
     try:
         point = ee.Geometry.Point(longitude, latitude)
         area_of_interest = point.buffer(200)  # ~200m buffer around point

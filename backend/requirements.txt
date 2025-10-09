@@ -1,10 +1,10 @@
 # Core backend
-flask==2.3.2
+flask==3.1.0
 flask-cors==4.0.0
 gunicorn==20.1.0
 requests==2.31.0
 Pillow>=10.0
-werkzeug>=2.3.3,<3
+werkzeug>=3.0.0
 
 # Google Earth Engine
 earthengine-api>=0.1.315
