@@ -21,11 +21,35 @@ def _initialize_ee():
     return _ee_initialized
 
 
-def get_vegetation_change(latitude, longitude):
+def get_vegetation_change(latitude, longitude, use_enhanced=False):
     """
     Compute NDVI change (%) in last 30 days around a GPS point.
-    Returns float or None if data unavailable.
+    
+    Args:
+        latitude: GPS latitude
+        longitude: GPS longitude  
+        use_enhanced: If True, returns comprehensive multi-temporal analysis.
+                     If False, returns simple percentage change (default).
+    
+    Returns:
+        - Simple mode: float percentage or None
+        - Enhanced mode: dict with short_term_change, medium_term_change, 
+                        long_term_change, trend_direction, alert_level, etc.
     """
+    # If enhanced mode requested, use enhanced analysis
+    if use_enhanced:
+        try:
+            from enhanced_vegetation_analysis import get_vegetation_change_enhanced
+            result = get_vegetation_change_enhanced(latitude, longitude)
+            # For backward compatibility, extract simple percentage if available
+            if result and isinstance(result, dict):
+                return result  # Return full enhanced result
+            return result
+        except ImportError:
+            print("[WARN] Enhanced analysis module not available, falling back to simple method")
+        except Exception as e:
+            print(f"[WARN] Enhanced analysis failed: {e}, falling back to simple method")
+    
     # Initialize EE only when needed
     if not _initialize_ee():
         print("[WARN] Google Earth Engine not available, returning None")

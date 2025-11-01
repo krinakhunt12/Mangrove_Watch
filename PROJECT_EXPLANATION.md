@@ -77,9 +77,15 @@ Mangrove forests are critical coastal ecosystems that protect shorelines, seques
 
 #### 3. **Satellite Check (`satelite_check.py`)**
 - Google Earth Engine integration for NDVI (Normalized Difference Vegetation Index) calculation
-- Compares satellite images from 30-60 days ago vs. last 30 days
-- Calculates percentage change: `((NDVI_after - NDVI_before) / NDVI_before) * 100`
-- Handles cloud cover filtering (<50% clouds)
+- **Enhanced Multi-Temporal Analysis** with multiple time horizons:
+  - Short-term (30 days): Immediate changes detection
+  - Medium-term (90 days): Quarterly trend analysis
+  - Long-term (6 months): Annual pattern identification
+- Uses **median** (not mean) for robust statistical analysis (reduces outlier impact)
+- Calculates percentage change: `((NDVI_median_after - NDVI_median_before) / NDVI_median_before) * 100`
+- Handles cloud cover filtering (<30% clouds for enhanced mode, <50% for simple mode)
+- Provides trend direction (increasing/decreasing/stable) and alert levels (critical/warning/normal)
+- Compares against historical baseline (6-12 months ago) for context
 
 #### 4. **Utilities (`utils.py`)**
 - EXIF GPS coordinate extraction from image metadata
@@ -146,40 +152,128 @@ Else:
 
 ---
 
-## Vegetation Change Calculation Explanation
+## Enhanced Vegetation Change Calculation
 
-### **Understanding the 298% Result**
+### **Core Formula (Multi-Temporal Analysis)**
 
-The vegetation change percentage is calculated using the formula:
+The system now uses an **enhanced multi-temporal analysis** with the following improved calculation:
+
+#### **1. Statistical Robustness - Median Method**
 ```
-Percentage Change = ((NDVI_after - NDVI_before) / NDVI_before) × 100
+Vegetation Change (%) = ((NDVI_median_after - NDVI_median_before) / NDVI_median_before) × 100
 ```
 
-**Example Scenario for 298%:**
-- NDVI 60 days ago (before): 0.10 (sparse vegetation)
-- NDVI last 30 days (after): 0.398 (dense vegetation)
-- Calculation: ((0.398 - 0.10) / 0.10) × 100 = 298%
+**Key Improvement:** Uses **median** instead of mean
+- **Why:** Median is less affected by outliers (clouds, shadows, data errors)
+- **Benefit:** More accurate representation of actual vegetation condition
+- **Method:** Analyzes multiple satellite passes per period and uses the median value
 
-**This means:**
-- The NDVI value nearly **tripled** (3x increase)
-- Indicates significant vegetation growth
-- Could result from:
-  - Seasonal variations (monsoon growth)
-  - Mangrove restoration efforts
-  - Natural recovery after disturbance
-  - Agricultural/planting activities
+#### **2. Multiple Time Period Scores**
 
-**Is this normal?**
-- Yes, mathematically correct
-- High percentages (200-300%+) are possible when comparing very sparse to dense vegetation
-- Important to consider context: seasonal changes, restoration projects, or data quality
+The system calculates **three vegetation change scores**:
 
-**Range of Possible Values:**
-- **Positive values:** Vegetation increase (growth)
-- **Negative values:** Vegetation decrease (deforestation, degradation)
-- **Near zero:** Minimal change
-- **High positive (>100%):** Significant growth (common after restoration)
-- **High negative (<-50%):** Significant loss (deforestation alert)
+##### **A. Short-Term Score (30 days)**
+```
+Short_Term_Score = ((NDVI_last_30_days - NDVI_30_to_60_days_ago) / NDVI_30_to_60_days_ago) × 100
+```
+- Detects immediate changes (recent cutting, fires, restoration)
+- Most sensitive to recent activities
+- Primary score for quick alerts
+
+##### **B. Medium-Term Score (90 days)**
+```
+Medium_Term_Score = ((NDVI_last_90_days - NDVI_90_to_150_days_ago) / NDVI_90_to_150_days_ago) × 100
+```
+- Shows quarterly trends
+- Filters out short-term noise
+- Better for detecting gradual changes
+
+##### **C. Long-Term Score (6 months)**
+```
+Long_Term_Score = ((NDVI_last_180_days - NDVI_180_to_270_days_ago) / NDVI_180_to_270_days_ago) × 100
+```
+- Reveals annual patterns
+- Helps identify restoration success
+- Shows long-term degradation or recovery
+
+#### **3. Baseline Comparison Score**
+```
+Baseline_Comparison = ((NDVI_current - NDVI_historical_baseline) / NDVI_historical_baseline) × 100
+```
+- Compares current state to historical average (6-12 months ago)
+- Identifies if changes are normal or anomalous
+- Helps distinguish seasonal variations from real threats
+
+#### **4. Automatic Trend & Alert Classification**
+
+**Trend Direction:**
+- **Increasing:** Score > +10% (growing vegetation)
+- **Decreasing:** Score < -10% (declining vegetation)
+- **Stable:** Score between -10% and +10% (minimal change)
+
+**Alert Levels:**
+- **🟢 Normal:** -15% to +50% (typical variations)
+- **🟡 Warning:** -30% to -15% loss OR >+50% growth (requires monitoring)
+- **🔴 Critical:** <-30% loss (severe deforestation - immediate action needed)
+
+### **Example Calculation (298% Result)**
+
+**Short-Term Analysis:**
+- NDVI median (30-60 days ago): 0.10 (sparse vegetation)
+- NDVI median (last 30 days): 0.398 (dense vegetation)
+- **Short-Term Score:** ((0.398 - 0.10) / 0.10) × 100 = **298%**
+- **Trend:** Increasing
+- **Alert:** Normal (high growth is positive)
+
+**What This Means:**
+- Vegetation nearly **tripled** in 30 days
+- Indicates significant recovery or growth
+- Could result from: restoration efforts, seasonal growth (monsoon), or natural recovery
+
+**Enhanced Context (if all periods available):**
+- **Short-term (30 days):** +298% (immediate growth)
+- **Medium-term (90 days):** +45% (quarterly trend positive)
+- **Long-term (6 months):** +12% (annual pattern healthy)
+- **vs. Baseline:** +59% above historical average (excellent recovery)
+
+**Is 298% Normal?**
+- ✅ Yes, mathematically correct
+- ✅ High percentages are possible when comparing sparse to dense vegetation
+- ✅ Enhanced analysis provides context across multiple time horizons
+- ✅ Baseline comparison helps identify if this is unusual or expected
+
+### **Score Interpretation Guide**
+
+**Positive Scores (+) = Vegetation Growth:**
+- **+10% to +50%:** Moderate growth (good recovery)
+- **+50% to +200%:** Significant growth (excellent, verify context)
+- **+200%+:** Exceptional growth (may indicate restoration success or data anomaly)
+
+**Negative Scores (-) = Vegetation Loss:**
+- **-5% to -15%:** Minor loss (monitor closely)
+- **-15% to -30%:** Moderate loss (🟡 warning - action needed)
+- **-30% or more:** Severe loss (🔴 critical - immediate intervention required)
+
+**Zero or Near Zero (±2%) = Stable:**
+- Minimal change detected
+- Ecosystem is stable
+- Normal seasonal variation
+
+### **Why Enhanced Method is Better**
+
+**Old Simple Method:**
+- Single comparison (two time points)
+- Uses mean (sensitive to outliers)
+- No context about trends
+- Single percentage value
+
+**New Enhanced Method:**
+- Multiple time horizons (short/medium/long-term)
+- Uses median (robust against outliers)
+- Automatic trend detection
+- Baseline comparison for context
+- Alert level prioritization
+- Comprehensive vegetation health assessment
 
 ---
 
@@ -196,7 +290,13 @@ Percentage Change = ((NDVI_after - NDVI_before) / NDVI_before) × 100
 ### **Response Messages:**
 The system provides detailed feedback including:
 - ✅ AI classification label (e.g., "Healthy Mangrove", "Mangrove Cutting")
-- 📊 Vegetation change percentage
+- 📊 **Enhanced Vegetation Scores:**
+  - Short-term change (30 days) - primary score
+  - Medium-term change (90 days) - when available
+  - Long-term change (6 months) - when available
+  - Trend direction (increasing/decreasing/stable)
+  - Alert level (critical/warning/normal)
+  - Baseline comparison (vs. historical average)
 - 📍 Coordinate source indication
 - ⚠️ Warnings if EXIF coordinates unavailable
 - 🎯 Confidence scores when available
