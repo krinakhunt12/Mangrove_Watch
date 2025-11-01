@@ -151,8 +151,34 @@ def run_pipeline():
                 filename = secure_filename(image_file.filename)
                 image_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
                 image_file.save(image_path)
-                # Pass image_path to pipeline
+                
+                # Check if coordinates are provided in form data (from browser geolocation)
+                provided_lat = request.form.get("latitude")
+                provided_lon = request.form.get("longitude")
+                
+                # Pass image_path to pipeline - this will try to extract EXIF coordinates first
                 result = pipeline.run_on_image(image_path)
+                
+                # If coordinates weren't extracted from EXIF but were provided by browser, use those as fallback
+                if (provided_lat and provided_lon and 
+                    (not result.get("coordinates") or result.get("coordinates") is None)):
+                    try:
+                        lat = float(provided_lat)
+                        lon = float(provided_lon)
+                        result["latitude"] = lat
+                        result["longitude"] = lon
+                        result["coordinates"] = [lat, lon]
+                        result["coordinate_source"] = "browser_geolocation"  # Override: Mark as browser-provided
+                        # Now run satellite check with provided coordinates
+                        veg_change = get_vegetation_change(lat, lon)
+                        result["satellite_vegetation_change"] = veg_change
+                        print(f"[INFO] EXIF coordinates not found. Using browser-provided coordinates ({lat}, {lon}) for vegetation analysis")
+                    except (ValueError, TypeError) as e:
+                        print(f"[ERROR] Invalid coordinates provided: {e}")
+                elif result.get("coordinate_source") == "exif":
+                    print(f"[INFO] Successfully extracted coordinates from EXIF data")
+                elif result.get("coordinate_source") == "none":
+                    print(f"[WARNING] No coordinates found in image EXIF data and no browser coordinates provided")
                 
                 # Save result to database and update user stats if user_id is provided
                 if user_id:

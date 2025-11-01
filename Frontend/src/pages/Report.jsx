@@ -79,7 +79,7 @@ const FloatingBackgroundElements = () => {
 
 // Animated upload area component
 
-const AnimatedUploadArea = ({ selectedImage, uploadError, handleImageChange, handleRemoveImage, fileInputRef }) => {
+const AnimatedUploadArea = ({ selectedImage, uploadError, handleRemoveImage, onCapture, isCapturing, cameraError, videoRef, onStartCamera, onStopCamera, onImageChange, fileInputRef, captureMode, onToggleMode }) => {
 
   const controls = useAnimation();
 
@@ -169,9 +169,35 @@ const AnimatedUploadArea = ({ selectedImage, uploadError, handleImageChange, han
 
       >
 
-        Upload Photo Evidence
+        {captureMode === 'camera' ? 'Capture Photo Evidence' : 'Upload Photo Evidence'}
 
       </motion.h2>
+
+      {/* Mode Toggle Buttons */}
+      <div className="flex gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => onToggleMode('camera')}
+          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+            captureMode === 'camera'
+              ? 'bg-green-600 text-white shadow-md'
+              : 'bg-green-100 text-green-700 hover:bg-green-200'
+          }`}
+        >
+          📷 Camera
+        </button>
+        <button
+          type="button"
+          onClick={() => onToggleMode('upload')}
+          className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all ${
+            captureMode === 'upload'
+              ? 'bg-green-600 text-white shadow-md'
+              : 'bg-green-100 text-green-700 hover:bg-green-200'
+          }`}
+        >
+          📁 Upload
+        </button>
+      </div>
 
       
 
@@ -181,13 +207,7 @@ const AnimatedUploadArea = ({ selectedImage, uploadError, handleImageChange, han
 
         initial="rest"
 
-        whileHover="hover"
-
-        whileTap="tap"
-
-        className={`border-2 border-dashed ${uploadError ? 'border-red-400' : 'border-green-300'} rounded-2xl bg-green-50 p-6 transition-all duration-200 hover:bg-green-100 cursor-pointer relative overflow-hidden group`}
-
-        onClick={() => fileInputRef.current?.click()}
+        className={`border-2 ${uploadError || cameraError ? 'border-red-400' : 'border-green-300'} rounded-2xl bg-green-50 p-6 transition-all duration-200 relative overflow-hidden group`}
 
       >
 
@@ -217,7 +237,7 @@ const AnimatedUploadArea = ({ selectedImage, uploadError, handleImageChange, han
 
               src={selectedImage}
 
-              alt="Selected issue"
+              alt="Captured issue"
 
               className="rounded-xl shadow-md w-full h-64 object-cover"
 
@@ -261,71 +281,184 @@ const AnimatedUploadArea = ({ selectedImage, uploadError, handleImageChange, han
 
         ) : (
 
-          <motion.div 
+          <div className="relative">
 
-            initial={{ opacity: 0, y: 20 }}
+            {captureMode === 'camera' && isCapturing ? (
 
-            animate={{ opacity: 1, y: 0 }}
+              <motion.div 
 
-            transition={{ duration: 0.5 }}
+                initial={{ opacity: 0, y: 20 }}
 
-            className="flex flex-col items-center justify-center h-48 py-6"
+                animate={{ opacity: 1, y: 0 }}
 
-          >
+                transition={{ duration: 0.5 }}
 
-            <motion.svg 
+                className="relative"
 
-              initial={{ scale: 0, rotate: -180 }}
+              >
 
-              animate={{ scale: 1, rotate: 0 }}
+                <video
 
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  ref={videoRef}
 
-              xmlns="http://www.w3.org/2000/svg" 
+                  autoPlay
 
-              className="h-12 w-12 text-green-500 mb-4" 
+                  playsInline
 
-              fill="none" 
+                  muted
 
-              viewBox="0 0 24 24" 
+                  className="rounded-xl shadow-md w-full h-64 object-cover bg-black"
 
-              stroke="currentColor"
+                  style={{ transform: 'scaleX(-1)' }}
 
-            >
+                />
 
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <motion.button
 
-            </motion.svg>
+                  initial={{ opacity: 0, scale: 0 }}
 
-            <p className="text-green-700 text-center mb-2 font-medium tracking-wide">Click to upload an image</p>
+                  animate={{ opacity: 1, scale: 1 }}
 
-            <p className="text-green-600 text-sm text-center tracking-wide">JPG, PNG or GIF (Max 5MB)</p>
+                  transition={{ delay: 0.2 }}
 
-          </motion.div>
+                  type="button"
+
+                  onClick={onCapture}
+
+                  className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg transition-colors flex items-center justify-center"
+
+                  whileHover={{ scale: 1.1 }}
+
+                  whileTap={{ scale: 0.9 }}
+
+                >
+
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+
+                    <circle cx="12" cy="12" r="3"/>
+
+                  </svg>
+
+                </motion.button>
+
+              </motion.div>
+
+            ) : captureMode === 'upload' ? (
+
+              <motion.div 
+
+                initial={{ opacity: 0, y: 20 }}
+
+                animate={{ opacity: 1, y: 0 }}
+
+                transition={{ duration: 0.5 }}
+
+                className="flex flex-col items-center justify-center h-48 py-6 cursor-pointer"
+
+                onClick={() => fileInputRef.current?.click()}
+
+              >
+
+                <motion.svg 
+
+                  initial={{ scale: 0, rotate: -180 }}
+
+                  animate={{ scale: 1, rotate: 0 }}
+
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+
+                  xmlns="http://www.w3.org/2000/svg" 
+
+                  className="h-12 w-12 text-green-500 mb-4" 
+
+                  fill="none" 
+
+                  viewBox="0 0 24 24" 
+
+                  stroke="currentColor"
+
+                >
+
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+
+                </motion.svg>
+
+                <p className="text-green-700 text-center mb-2 font-medium tracking-wide">Click to upload an image</p>
+
+                <p className="text-green-600 text-sm text-center tracking-wide">JPG, PNG or GIF (Max 5MB)</p>
+
+              </motion.div>
+
+            ) : (
+
+              <motion.div 
+
+                initial={{ opacity: 0, y: 20 }}
+
+                animate={{ opacity: 1, y: 0 }}
+
+                transition={{ duration: 0.5 }}
+
+                className="flex flex-col items-center justify-center h-48 py-6"
+
+              >
+
+                <motion.svg 
+
+                  initial={{ scale: 0, rotate: -180 }}
+
+                  animate={{ scale: 1, rotate: 0 }}
+
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+
+                  xmlns="http://www.w3.org/2000/svg" 
+
+                  className="h-12 w-12 text-green-500 mb-4" 
+
+                  fill="none" 
+
+                  viewBox="0 0 24 24" 
+
+                  stroke="currentColor"
+
+                >
+
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+
+                </motion.svg>
+
+                <p className="text-green-700 text-center mb-2 font-medium tracking-wide">Camera not started</p>
+
+                <p className="text-green-600 text-sm text-center tracking-wide">Click "Start Camera" to capture a photo</p>
+
+              </motion.div>
+
+            )}
+
+          </div>
 
         )}
 
-        
-
-        <input
-
-          type="file"
-
-          accept="image/*"
-
-          onChange={handleImageChange}
-
-          className="hidden"
-
-          ref={fileInputRef}
-
-        />
+        {/* Hidden file input for upload mode */}
+        {captureMode === 'upload' && (
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onImageChange}
+            className="hidden"
+            ref={fileInputRef}
+          />
+        )}
 
       </motion.div>
 
       
 
-      {uploadError && (
+      {(uploadError || cameraError) && (
 
         <motion.p 
 
@@ -343,9 +476,79 @@ const AnimatedUploadArea = ({ selectedImage, uploadError, handleImageChange, han
 
           </svg>
 
-          {uploadError}
+          {uploadError || cameraError}
 
         </motion.p>
+
+      )}
+
+      {!selectedImage && !isCapturing && captureMode === 'camera' && (
+
+        <motion.button
+
+          initial={{ opacity: 0, y: 10 }}
+
+          animate={{ opacity: 1, y: 0 }}
+
+          transition={{ duration: 0.5, delay: 0.3 }}
+
+          type="button"
+
+          onClick={onStartCamera}
+
+          className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl shadow-md transition-all font-medium flex items-center justify-center gap-2"
+
+          whileHover={{ scale: 1.02 }}
+
+          whileTap={{ scale: 0.98 }}
+
+        >
+
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+
+          </svg>
+
+          Start Camera
+
+        </motion.button>
+
+      )}
+
+      {isCapturing && captureMode === 'camera' && (
+
+        <motion.button
+
+          initial={{ opacity: 0, y: 10 }}
+
+          animate={{ opacity: 1, y: 0 }}
+
+          transition={{ duration: 0.5, delay: 0.3 }}
+
+          type="button"
+
+          onClick={onStopCamera}
+
+          className="mt-4 w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl shadow-md transition-all font-medium flex items-center justify-center gap-2"
+
+          whileHover={{ scale: 1.02 }}
+
+          whileTap={{ scale: 0.98 }}
+
+        >
+
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+
+          </svg>
+
+          Stop Camera
+
+        </motion.button>
 
       )}
 
@@ -635,15 +838,165 @@ export default function Report() {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const [isCapturing, setIsCapturing] = useState(false);
+
+  const [cameraError, setCameraError] = useState("");
+
+  const [captureMode, setCaptureMode] = useState('camera'); // 'camera' or 'upload'
+
+  const [userLocation, setUserLocation] = useState(null); // { lat, lon }
+
+  const [locationError, setLocationError] = useState("");
+
+  const [isFromCamera, setIsFromCamera] = useState(false); // Track if current image is from camera
+
+  const videoRef = useRef(null);
+
+  const streamRef = useRef(null);
+
+  const canvasRef = useRef(null);
+
   const fileInputRef = useRef(null);
 
+
+
+  const getCurrentLocation = () => {
+
+    try {
+
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+
+        navigator.geolocation.getCurrentPosition(
+
+          (position) => {
+
+            setUserLocation({
+
+              lat: position.coords.latitude,
+
+              lon: position.coords.longitude
+
+            });
+
+            setLocationError("");
+
+          },
+
+          (error) => {
+
+            console.error("Error getting location:", error);
+
+            setLocationError("Location access denied or unavailable. Vegetation analysis may not be available.");
+
+            setUserLocation(null);
+
+          },
+
+          {
+
+            enableHighAccuracy: true,
+
+            timeout: 10000,
+
+            maximumAge: 0
+
+          }
+
+        );
+
+      } else {
+
+        setLocationError("Geolocation not supported by your browser.");
+
+      }
+
+    } catch (error) {
+
+      console.error("Error in getCurrentLocation:", error);
+
+      setLocationError("Failed to get location.");
+
+    }
+
+  };
 
 
   useEffect(() => {
 
     setMounted(true);
 
+    // Request user's location when component mounts (only if geolocation is available)
+    try {
+      if (typeof navigator !== 'undefined' && navigator.geolocation) {
+        getCurrentLocation();
+      }
+    } catch (error) {
+      console.error("Error initializing geolocation:", error);
+      setLocationError("Location services not available.");
+    }
+
+    // Cleanup camera stream on unmount
+
+    return () => {
+
+      if (streamRef.current) {
+
+        streamRef.current.getTracks().forEach(track => track.stop());
+
+      }
+
+    };
+
   }, []);
+
+
+  // Effect to ensure video plays when stream is attached and video element is ready
+
+  useEffect(() => {
+
+    if (isCapturing && videoRef.current && streamRef.current) {
+
+      const video = videoRef.current;
+
+      // Check if stream is already attached
+
+      if (video.srcObject !== streamRef.current) {
+
+        video.srcObject = streamRef.current;
+
+      }
+
+      // Ensure video is playing
+
+      const playVideo = async () => {
+
+        try {
+
+          await video.play();
+
+          console.log("Video playing via useEffect");
+
+        } catch (err) {
+
+          console.log("Video play attempt in useEffect:", err);
+
+          // Try again after a short delay
+
+          setTimeout(() => {
+
+            video.play().catch(e => console.log("Retry play failed:", e));
+
+          }, 200);
+
+        }
+
+      };
+
+      playVideo();
+
+    }
+
+  }, [isCapturing]);
 
 
   const showToast = (message, type = "success") => {
@@ -652,6 +1005,268 @@ export default function Report() {
 
   const hideToast = () => {
     setToast({ show: false, message: "", type: "success" });
+  };
+
+
+  const startCamera = async () => {
+
+    try {
+
+      setCameraError("");
+
+      // Stop any existing stream first
+
+      if (streamRef.current) {
+
+        streamRef.current.getTracks().forEach(track => track.stop());
+
+        streamRef.current = null;
+
+      }
+
+      // Set capturing state first to render the video element
+
+      setIsCapturing(true);
+
+      // Request camera access
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+
+        video: { 
+
+          facingMode: 'environment', // Use back camera on mobile
+
+          width: { ideal: 1280 },
+
+          height: { ideal: 720 }
+
+        }
+
+      });
+
+      
+
+      streamRef.current = stream;
+
+      // Wait for next render cycle so video element is in DOM
+
+      setTimeout(() => {
+
+        if (videoRef.current && streamRef.current) {
+
+          const video = videoRef.current;
+
+          video.srcObject = streamRef.current;
+
+          // Wait for video to be ready and play
+
+          video.onloadedmetadata = async () => {
+
+            try {
+
+              await video.play();
+
+              console.log("Video is playing successfully");
+
+            } catch (err) {
+
+              console.error("Error playing video:", err);
+
+              setCameraError("Unable to start camera video. Please try again.");
+
+              setIsCapturing(false);
+
+            }
+
+          };
+
+          // Also try to play immediately (for some browsers)
+
+          video.play().catch(err => {
+
+            console.log("Initial play attempt failed, waiting for metadata:", err);
+
+            // This is okay, onloadedmetadata will handle it
+
+          });
+
+        } else {
+
+          console.error("Video ref is not available after render");
+
+          setCameraError("Video element not ready. Please try again.");
+
+          setIsCapturing(false);
+
+          if (streamRef.current) {
+
+            streamRef.current.getTracks().forEach(track => track.stop());
+
+            streamRef.current = null;
+
+          }
+
+        }
+
+      }, 100);
+
+    } catch (error) {
+
+      console.error("Error accessing camera:", error);
+
+      let errorMessage = "Unable to access camera. ";
+
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+
+        errorMessage += "Please grant camera permissions and try again.";
+
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+
+        errorMessage += "No camera found on your device.";
+
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+
+        errorMessage += "Camera is being used by another application.";
+
+      } else {
+
+        errorMessage += "Please ensure camera permissions are granted and no other app is using it.";
+
+      }
+
+      setCameraError(errorMessage);
+
+      setIsCapturing(false);
+
+    }
+
+  };
+
+
+  const stopCamera = () => {
+
+    if (streamRef.current) {
+
+      streamRef.current.getTracks().forEach(track => track.stop());
+
+      streamRef.current = null;
+
+    }
+
+    if (videoRef.current) {
+
+      videoRef.current.srcObject = null;
+
+    }
+
+    setIsCapturing(false);
+
+    setCameraError("");
+
+  };
+
+
+  const capturePhoto = () => {
+
+    try {
+
+      if (!videoRef.current || !canvasRef.current) {
+
+        setCameraError("Camera not ready. Please try again.");
+
+        return;
+
+      }
+
+      
+
+      const video = videoRef.current;
+
+      const canvas = canvasRef.current;
+
+      const context = canvas.getContext('2d');
+
+      
+
+      // Set canvas dimensions to match video
+
+      canvas.width = video.videoWidth;
+
+      canvas.height = video.videoHeight;
+
+      
+
+      // Draw video frame to canvas
+
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      
+
+      // Convert canvas to blob
+
+      canvas.toBlob((blob) => {
+
+        if (!blob) {
+
+          setCameraError("Failed to capture photo. Please try again.");
+
+          return;
+
+        }
+
+        
+
+        // Validate blob size (5MB limit)
+
+        if (blob.size > 5 * 1024 * 1024) {
+
+          setCameraError("Captured image is too large. Please try again with better lighting.");
+
+          return;
+
+        }
+
+        
+
+        // Create File object from blob
+
+        const file = new File([blob], `captured-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+        
+
+        // Create preview URL
+
+        const imageUrl = URL.createObjectURL(blob);
+
+        
+
+        setSelectedImage(imageUrl);
+
+        setSelectedFile(file);
+
+        setIsFromCamera(true); // Mark this image as from camera
+
+        setUploadError("");
+
+        setCameraError("");
+
+        
+        // Stop camera after capture
+
+        stopCamera();
+
+      }, 'image/jpeg', 0.9);
+
+      
+
+    } catch (error) {
+
+      console.error("Error capturing photo:", error);
+
+      setCameraError("Failed to capture photo. Please try again.");
+
+    }
+
   };
 
 
@@ -687,6 +1302,8 @@ export default function Report() {
 
     setUploadError("");
 
+    setIsFromCamera(false); // Mark as uploaded file, not from camera
+
     setSelectedImage(URL.createObjectURL(file));
 
     setSelectedFile(file);
@@ -699,13 +1316,28 @@ export default function Report() {
     setSelectedImage(null);
 
     setSelectedFile(null);
+
+    setIsFromCamera(false);
+
     setUploadError("");
 
-    if (fileInputRef.current) {
 
-      fileInputRef.current.value = "";
+  };
+
+
+  const toggleMode = (mode) => {
+
+    if (captureMode === 'camera' && isCapturing) {
+
+      stopCamera();
 
     }
+
+    setCaptureMode(mode);
+
+    setUploadError("");
+
+    setCameraError("");
 
   };
 
@@ -742,6 +1374,13 @@ export default function Report() {
       formData.append("mode", "image");
       formData.append("description", description);
       
+      // If image is from camera, send browser coordinates for vegetation analysis
+      // If image is uploaded, don't send browser coordinates - only use EXIF from image
+      if (isFromCamera && userLocation && userLocation.lat && userLocation.lon) {
+        formData.append("latitude", userLocation.lat.toString());
+        formData.append("longitude", userLocation.lon.toString());
+      }
+      
       // Add user_id if user is logged in
       if (auth && auth.user_id) {
         formData.append("user_id", auth.user_id);
@@ -764,32 +1403,52 @@ export default function Report() {
         const satelliteData = result.result?.satellite_vegetation_change;
         const confidence = result.result?.confidence;
         const label = result.result?.label;
+        const coordinateSource = result.result?.coordinate_source;
         
         let validationMessage = "";
         
-        // Check if AI detected something from our labels list
-        if (label && label.includes("mangrove")) {
-          // AI detected mangrove issue
-          if (satelliteData !== null && satelliteData !== undefined) {
-            // Both AI and satellite data available
-            if (satelliteData > 5) { // Significant vegetation change threshold
-              validationMessage = `🎯 Excellent! Both AI analysis and satellite data confirm significant vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. Your report has been verified!`;
-            } else if (satelliteData > 0 && satelliteData <= 5) {
-              validationMessage = `📊 Both AI and satellite analysis show moderate vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. Valid report!`;
-            } else if (satelliteData < 0) {
-              validationMessage = `📉 Both AI and satellite analysis show ${Math.abs(satelliteData.toFixed(1))}% vegetation loss in the last 30 days. Valid report!`;
+        // Always show AI classification result if available
+        if (label) {
+          const labelDisplay = label.charAt(0).toUpperCase() + label.slice(1);
+          
+          if (label.includes("mangrove")) {
+            // AI detected mangrove-related issue
+            if (satelliteData !== null && satelliteData !== undefined) {
+              // Both AI and satellite data available
+              if (satelliteData > 5) {
+                validationMessage = `🎯 Excellent! Both AI analysis and satellite data confirm significant vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. Your report has been verified!`;
+              } else if (satelliteData > 0 && satelliteData <= 5) {
+                validationMessage = `📊 Both AI and satellite analysis show moderate vegetation change of ${satelliteData.toFixed(1)}% in the last 30 days. Valid report!`;
+              } else if (satelliteData < 0) {
+                validationMessage = `📉 Both AI and satellite analysis show ${Math.abs(satelliteData.toFixed(1))}% vegetation loss in the last 30 days. Valid report!`;
+              } else {
+                validationMessage = `✅ AI detected: ${labelDisplay}. Satellite analysis shows no significant vegetation change in the last 30 days. Our team will investigate further.`;
+              }
             } else {
-              // AI detected but satellite shows no significant change
-              validationMessage = `✅ AI detected mangrove issue (${label}), but satellite analysis shows no significant vegetation change in the last 30 days. Our team will investigate further.`;
+              // AI detected but no satellite data
+              if (coordinateSource === "none") {
+                validationMessage = `✅ AI detected: ${labelDisplay}. ⚠️ Could not fetch coordinates from image EXIF data. Satellite analysis unavailable. Our team will investigate further.`;
+              } else {
+                validationMessage = `✅ AI detected: ${labelDisplay}. Satellite data unavailable for this location. Our team will investigate further.`;
+              }
             }
           } else {
-            // AI detected but no satellite data available
-            validationMessage = `✅ AI detected mangrove issue (${label}). Satellite data unavailable for this location. Our team will investigate further.`;
+            // AI detected non-mangrove classification
+            validationMessage = `📝 AI Classification: ${labelDisplay}`;
+            if (coordinateSource === "none") {
+              validationMessage += `. ⚠️ Could not fetch coordinates from image EXIF data.`;
+            }
+            if (satelliteData !== null && satelliteData !== undefined) {
+              validationMessage += ` Satellite analysis shows ${satelliteData.toFixed(1)}% vegetation change.`;
+            }
+            validationMessage += ` Our team will review your submission.`;
           }
         } else {
-          // AI did not detect mangrove issue from our labels
-          if (satelliteData !== null && satelliteData !== undefined) {
-            validationMessage = `📝 Report submitted. Satellite analysis shows ${satelliteData.toFixed(1)}% vegetation change in the last 30 days, but AI did not detect a mangrove-related issue. Our team will review your submission.`;
+          // No AI classification
+          if (coordinateSource === "none") {
+            validationMessage = `📝 Report submitted. ⚠️ Could not fetch coordinates from image EXIF data. Our team will review your submission.`;
+          } else if (satelliteData !== null && satelliteData !== undefined) {
+            validationMessage = `📝 Report submitted. Satellite analysis shows ${satelliteData.toFixed(1)}% vegetation change. Our team will review your submission.`;
           } else {
             validationMessage = `📝 Report submitted successfully! Our team will review your submission.`;
           }
@@ -798,6 +1457,13 @@ export default function Report() {
         // Add confidence level if available
         if (confidence && confidence > 0.3) {
           validationMessage += ` (AI Confidence: ${Math.round(confidence * 100)}%)`;
+        }
+        
+        // Add coordinate source info for transparency
+        if (coordinateSource === "exif") {
+          validationMessage += ` [Coordinates from image]`;
+        } else if (coordinateSource === "browser_geolocation") {
+          validationMessage += ` [Coordinates from browser location]`;
         }
         
         showToast(validationMessage, "success");
@@ -810,13 +1476,9 @@ export default function Report() {
 
         setSelectedFile(null);
 
+        setIsFromCamera(false);
+
         setDescription("");
-
-        if (fileInputRef.current) {
-
-          fileInputRef.current.value = "";
-
-        }
 
       } else {
 
@@ -966,13 +1628,58 @@ export default function Report() {
 
               uploadError={uploadError}
 
-              handleImageChange={handleImageChange}
-
               handleRemoveImage={handleRemoveImage}
+
+              onCapture={capturePhoto}
+
+              isCapturing={isCapturing}
+
+              cameraError={cameraError}
+
+              videoRef={videoRef}
+
+              onStartCamera={startCamera}
+
+              onStopCamera={stopCamera}
+
+              onImageChange={handleImageChange}
 
               fileInputRef={fileInputRef}
 
+              captureMode={captureMode}
+
+              onToggleMode={toggleMode}
+
             />
+
+            <canvas ref={canvasRef} className="hidden" />
+
+            {/* Location Status Indicator */}
+            {locationError && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 text-yellow-600 text-xs flex items-center gap-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                {locationError}
+              </motion.div>
+            )}
+            {userLocation && !locationError && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 text-green-600 text-xs flex items-center gap-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Location captured: {userLocation.lat.toFixed(4)}, {userLocation.lon.toFixed(4)}
+              </motion.div>
+            )}
 
 
 

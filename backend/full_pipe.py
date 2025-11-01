@@ -40,13 +40,24 @@ class Pipeline:
         result = self.validator.analyze_photo(image_path)
 
         coords = result.get("coordinates")
-        if coords and coords[0] is not None and coords[1] is not None:
-            lat, lon = coords
+        if coords and isinstance(coords, list) and len(coords) >= 2 and coords[0] is not None and coords[1] is not None:
+            lat, lon = coords[0], coords[1]
+            
+            # Add latitude and longitude to result for database compatibility
+            result["latitude"] = lat
+            result["longitude"] = lon
+            result["coordinate_source"] = "exif"  # Mark as EXIF-extracted
+            
             logger.info(f"[PIPELINE] Running satellite check for ({lat}, {lon})...")
             veg_change = get_vegetation_change(lat, lon)
             result["satellite_vegetation_change"] = veg_change
+            logger.info(f"[PIPELINE] Vegetation change calculated: {veg_change}")
         else:
+            logger.warning(f"[PIPELINE] No valid coordinates found in image. Coordinates: {coords}")
+            result["latitude"] = None
+            result["longitude"] = None
             result["satellite_vegetation_change"] = None
+            result["coordinate_source"] = "none"  # Mark as no coordinates available
 
         return result
 
